@@ -1,6 +1,6 @@
 import { useStore } from '../lib/useStore.js';
 import { followUpStatus, STATUS_LABELS, todayStr } from '../lib/cycle.js';
-import { monthProgress } from '../lib/stats.js';
+import { monthProgress, birthdaysInMonth } from '../lib/stats.js';
 
 // フォロー優先度：離反リスク → 超過 → そろそろ の順、同状態内では超過率の高い順
 const STATUS_ORDER = { risk: 0, due: 1, soon: 2 };
@@ -28,6 +28,8 @@ export default function Home({ onOpenClient, onRecord }) {
     );
 
   const goalPercent = Math.round(progress.goalRatio * 100);
+  const birthdays = birthdaysInMonth(clients, today);
+  const todayDay = Number(today.slice(8, 10));
 
   return (
     <div className="page">
@@ -49,6 +51,33 @@ export default function Home({ onOpenClient, onRecord }) {
       <button className="btn primary block" onClick={onRecord}>
         ✍️ 施術を記録する
       </button>
+
+      {birthdays.length > 0 && (
+        <section className="card birthday-card">
+          <div className="card-title">🎂 今月お誕生日のお客様</div>
+          <ul className="list">
+            {birthdays.map(({ client, month, day }) => (
+              <li key={client.id}>
+                <button className="list-row" onClick={() => onOpenClient(client.id)}>
+                  <div className="list-main">
+                    <div className="list-name">{client.name} 様</div>
+                    <div className="list-sub">
+                      {month}月{day}日
+                      {day === todayDay && ' — 今日がお誕生日です！'}
+                    </div>
+                  </div>
+                  <span className="chip chip-birthday">
+                    {day === todayDay ? '🎉 今日' : day < todayDay ? '済' : `${day - todayDay}日後`}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+          <p className="hint">
+            タップしてカルテを開き、「お誕生日メッセージ」テンプレートでお祝いを送りましょう。
+          </p>
+        </section>
+      )}
 
       <section className="card">
         <div className="card-title">フォローアップ推奨</div>

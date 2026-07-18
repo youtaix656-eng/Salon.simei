@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useStore } from '../lib/useStore.js';
 import { followUpStatus, STATUS_LABELS, todayStr } from '../lib/cycle.js';
 import { renderTemplate, buildMessageVars } from '../lib/messages.js';
+import { askAI, buildClientConsultPrompt } from '../lib/ai.js';
 
 const PRESSURES = ['よわめ', 'ふつう', 'つよめ'];
 
@@ -23,6 +24,10 @@ export default function ClientDetail({ clientId, onBack, onRecord }) {
   const [templateId, setTemplateId] = useState(settings.templates[0]?.id || '');
   const [message, setMessage] = useState('');
   const [copied, setCopied] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiAnswer, setAiAnswer] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState('');
 
   if (!client) {
     return (
@@ -63,6 +68,30 @@ export default function ClientDetail({ clientId, onBack, onRecord }) {
     } catch {
       // クリップボードが使えない環境ではテキスト選択で代替してもらう
       setCopied(false);
+    }
+  };
+
+  const prepareAiPrompt = () => {
+    setAiAnswer('');
+    setAiError('');
+    setAiPrompt(
+      buildClientConsultPrompt(client, visits, {
+        intervalDays: info?.intervalDays,
+      })
+    );
+  };
+
+  const sendAiPrompt = async () => {
+    if (!aiPrompt.trim() || aiLoading) return;
+    setAiLoading(true);
+    setAiError('');
+    try {
+      const answer = await askAI(settings.ai, [{ role: 'user', text: aiPrompt }], settings);
+      setAiAnswer(answer);
+    } catch (err) {
+      setAiError(err?.message || '通信に失敗しました');
+    } finally {
+      setAiLoading(false);
     }
   };
 
@@ -200,6 +229,46 @@ export default function ClientDetail({ clientId, onBack, onRecord }) {
       </section>
 
       <section className="card">
+        <div className="card-title">AIに施術プランを相談</div>
+        {!settings.ai?.apiKey ? (
+          <p className="empty">
+            「設定」タブでAIのAPIキーを登録すると、このお客様のカルテ（匿名化した施術情報のみ）を
+            もとに、次回の施術プランをAIに相談できます。
+          </p>
+        ) : !aiPrompt ? (
+          <>
+            <p className="hint">
+              圧の好み・気になる部位・最近の施術メモなど、施術に関する情報だけを匿名でAIに送って
+              次回のプランを提案してもらえます。お名前・誕生日・会話メモは送信されません。
+            </p>
+            <button className="btn primary" onClick={prepareAiPrompt} style={{ marginTop: 8 }}>
+              🤖 施術プランの相談文を作成
+            </button>
+          </>
+        ) : (
+          <>
+            <p className="hint">送信内容（編集できます。個人情報が含まれていないかご確認ください）：</p>
+            <textarea
+              className="input message-preview"
+              rows="8"
+              value={aiPrompt}
+              onChange={(e) => setAiPrompt(e.target.value)}
+            />
+            <div className="form-actions">
+              <button className="btn" onClick={() => { setAiPrompt(''); setAiAnswer(''); setAiError(''); }}>
+                閉じる
+              </button>
+              <button className="btn primary" onClick={sendAiPrompt} disabled={aiLoading}>
+                {aiLoading ? '考え中…' : 'AIに送信'}
+              </button>
+            </div>
+            {aiError && <div className="chat-error">⚠️ {aiError}</div>}
+            {aiAnswer && <div className="ai-answer">{aiAnswer}</div>}
+          </>
+        )}
+      </section>
+
+      <section className="card">
         <div className="card-title">来店履歴</div>
         {own.length === 0 ? (
           <p className="empty">まだ来店記録がありません。</p>
@@ -224,6 +293,7 @@ export default function ClientDetail({ clientId, onBack, onRecord }) {
                 <div className="visit-body">
                   {v.menu || 'メニュー未記入'}
                   {v.minutes ? `（${v.minutes}分）` : ''}
+                  {v.price > 0 && ` ・ ¥${v.price.toLocaleString()}`}
                 </div>
                 {v.notes && <div className="visit-note">施術メモ：{v.notes}</div>}
                 {v.talk && <div className="visit-note">会話メモ：{v.talk}</div>}

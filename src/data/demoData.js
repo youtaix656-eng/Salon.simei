@@ -5,6 +5,7 @@ import { normalizeState, defaultSettings } from '../lib/storage.js';
 
 export function makeDemoData(today = todayStr()) {
   const d = (daysAgo) => addDays(today, -daysAgo);
+  const thisMonth = today.slice(5, 7); // デモ用：今月の誕生日を再現
   let seq = 0;
   const id = () => `demo-${++seq}`;
 
@@ -13,7 +14,7 @@ export function makeDemoData(today = todayStr()) {
       id: 'demo-c1',
       name: '佐藤 美咲',
       kana: 'さとう みさき',
-      birthday: '08-02',
+      birthday: `${thisMonth}-25`,
       pressure: 'つよめ',
       focusAreas: '肩甲骨まわり・首',
       likes: '愛犬（トイプードル）の話。ハーブティー好き。',
@@ -61,7 +62,7 @@ export function makeDemoData(today = todayStr()) {
       id: 'demo-c5',
       name: '山本 健一',
       kana: 'やまもと けんいち',
-      birthday: '06-30',
+      birthday: `${thisMonth}-03`,
       pressure: 'つよめ',
       focusAreas: '腰・太もも',
       likes: 'ゴルフ・ランニング',
@@ -101,6 +102,7 @@ export function makeDemoData(today = todayStr()) {
     date: d(daysAgo),
     menu,
     minutes,
+    price: minutes * 110, // デモ用のダミー料金
     nominated,
     notes,
     talk,

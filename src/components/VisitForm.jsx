@@ -11,6 +11,7 @@ export default function VisitForm({ presetClientId, onSaved }) {
   const [date, setDate] = useState(todayStr());
   const [menu, setMenu] = useState('');
   const [minutes, setMinutes] = useState(60);
+  const [price, setPrice] = useState('');
   const [nominated, setNominated] = useState(true);
   const [notes, setNotes] = useState('');
   const [talk, setTalk] = useState('');
@@ -36,6 +37,7 @@ export default function VisitForm({ presetClientId, onSaved }) {
       date,
       menu: menu.trim(),
       minutes: Number(minutes) || 0,
+      price: Math.max(0, Number(price) || 0),
       nominated,
       notes: notes.trim(),
       talk: talk.trim(),
@@ -113,6 +115,19 @@ export default function VisitForm({ presetClientId, onSaved }) {
             step="5"
             value={minutes}
             onChange={(e) => setMinutes(e.target.value)}
+          />
+        </label>
+
+        <label className="field">
+          <span>料金（円・任意）売上メモに集計されます</span>
+          <input
+            type="number"
+            className="input"
+            min="0"
+            step="100"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            placeholder="例：6600"
           />
         </label>
 

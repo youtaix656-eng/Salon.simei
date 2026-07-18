@@ -134,3 +134,35 @@ export async function askAI(ai, chat, settings) {
   if (ai.provider === 'claude') return askClaude(ai, chat, system);
   return askGemini(ai, chat, system);
 }
+
+// ---- カルテ連携：施術プラン相談用プロンプト ----
+// 個人を特定できる情報（お名前・ふりがな・誕生日・趣味/話題・会話メモ）は含めない。
+// 含めるのは施術に関係する情報のみ：圧の好み・気になる部位・来店ペース・最近の施術メモ。
+export function buildClientConsultPrompt(client, visits, options = {}) {
+  const own = visits
+    .filter((v) => v.clientId === client.id)
+    .sort((a, b) => (a.date < b.date ? 1 : -1));
+  const recent = own.slice(0, 3);
+  const lines = [
+    'あるお客様（匿名）の次回の施術プランを相談させてください。',
+    '',
+    '【お客様の情報（匿名）】',
+    `・圧の好み：${client.pressure || '記録なし'}`,
+    `・気になる部位：${client.focusAreas || '記録なし'}`,
+    `・これまでの来店回数：${own.length}回`,
+  ];
+  if (options.intervalDays) lines.push(`・来店周期：約${options.intervalDays}日`);
+  if (recent.length) {
+    lines.push('・最近の施術：');
+    for (const v of recent) {
+      const note = v.notes ? `／メモ：${v.notes}` : '';
+      lines.push(`　- ${v.menu || 'メニュー記録なし'}（${v.minutes || '?'}分）${note}`);
+    }
+  }
+  lines.push(
+    '',
+    '次回来店時におすすめの施術の流れ（重点部位・アプローチの順番）と、',
+    '満足度と指名につながる一言・気配りを簡潔に提案してください。'
+  );
+  return lines.join('\n');
+}

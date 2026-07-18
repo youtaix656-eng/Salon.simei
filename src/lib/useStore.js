@@ -51,6 +51,7 @@ export function useStoreProviderValue() {
         date: todayStr(),
         menu: '',
         minutes: 60,
+        price: 0,
         nominated: false,
         notes: '',
         talk: '',

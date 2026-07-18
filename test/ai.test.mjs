@@ -89,3 +89,38 @@ test('extractClaudeText: refusal は例外', () => {
     /回答できません/
   );
 });
+
+test('buildClientConsultPrompt: 施術情報のみを含み個人情報は含めない', async () => {
+  const { buildClientConsultPrompt } = await import('../src/lib/ai.js');
+  const client = {
+    id: 'c1',
+    name: '佐藤 美咲',
+    kana: 'さとう みさき',
+    birthday: '08-02',
+    pressure: 'つよめ',
+    focusAreas: '肩甲骨まわり',
+    likes: '愛犬の話',
+    ngTopics: '仕事の話',
+  };
+  const visits = [
+    { clientId: 'c1', date: '2026-07-01', menu: 'ボディ60', minutes: 60, notes: '張り強め', talk: '犬の誕生日' },
+    { clientId: 'c1', date: '2026-06-01', menu: 'ボディ90', minutes: 90, notes: '', talk: '' },
+    { clientId: 'c2', date: '2026-07-02', menu: '別人の施術', minutes: 60 },
+  ];
+  const prompt = buildClientConsultPrompt(client, visits, { intervalDays: 30 });
+  // 施術に関する情報は含む
+  assert.ok(prompt.includes('つよめ'));
+  assert.ok(prompt.includes('肩甲骨まわり'));
+  assert.ok(prompt.includes('来店回数：2回'));
+  assert.ok(prompt.includes('約30日'));
+  assert.ok(prompt.includes('ボディ60'));
+  assert.ok(prompt.includes('張り強め'));
+  // 個人情報・無関係な情報は含まない
+  assert.ok(!prompt.includes('佐藤'));
+  assert.ok(!prompt.includes('さとう'));
+  assert.ok(!prompt.includes('08-02'));
+  assert.ok(!prompt.includes('愛犬'));
+  assert.ok(!prompt.includes('仕事の話'));
+  assert.ok(!prompt.includes('犬の誕生日'));
+  assert.ok(!prompt.includes('別人の施術'));
+});

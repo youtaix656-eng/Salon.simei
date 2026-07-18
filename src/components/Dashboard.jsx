@@ -6,6 +6,7 @@ import {
   repeatStats,
   clientRanking,
   overallAverageInterval,
+  revenueStats,
 } from '../lib/stats.js';
 
 // 依存ライブラリなしの SVG 棒グラフ（来店数と指名数の重ね棒 + 指名率ラベル）
@@ -67,6 +68,7 @@ export default function Dashboard({ onOpenClient }) {
   const repeat = repeatStats(visits);
   const ranking = clientRanking(clients, visits, 5);
   const avgInterval = overallAverageInterval(clients, visits);
+  const revenue = revenueStats(visits, today);
 
   return (
     <div className="page">
@@ -97,6 +99,36 @@ export default function Dashboard({ onOpenClient }) {
           <div className="stat-label">平均来店周期</div>
         </div>
       </div>
+
+      <section className="card">
+        <div className="card-title">💰 今月の売上メモ</div>
+        {revenue.recorded === 0 ? (
+          <p className="empty">
+            施術の記録で「料金」を入力すると、売上と指名による売上効果がここに集計されます。
+          </p>
+        ) : (
+          <>
+            <div className="stat-row stat-row-3">
+              <div className="stat">
+                <div className="stat-value">¥{revenue.total.toLocaleString()}</div>
+                <div className="stat-label">売上合計</div>
+              </div>
+              <div className="stat">
+                <div className="stat-value">¥{revenue.nominated.toLocaleString()}</div>
+                <div className="stat-label">うち指名</div>
+              </div>
+              <div className="stat">
+                <div className="stat-value">¥{revenue.average.toLocaleString()}</div>
+                <div className="stat-label">平均単価</div>
+              </div>
+            </div>
+            <p className="hint">
+              売上の {Math.round(revenue.nominatedShare * 100)}% が指名によるものです
+              （料金入力済み {revenue.recorded} 件の集計）。
+            </p>
+          </>
+        )}
+      </section>
 
       <section className="card">
         <div className="card-title">月別の来店数と指名率（直近6ヶ月）</div>

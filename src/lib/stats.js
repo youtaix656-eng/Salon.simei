@@ -90,3 +90,47 @@ export function overallAverageInterval(clients, visits) {
   if (!values.length) return null;
   return values.reduce((a, b) => a + b, 0) / values.length;
 }
+
+// ---- 誕生日 ----
+
+// 'MM-DD' / 'M/D' / 'YYYY-MM-DD' などの表記から {month, day} を取り出す。
+// 解釈できない場合は null。
+export function parseBirthday(str) {
+  const nums = String(str || '').match(/\d+/g);
+  if (!nums || nums.length < 2) return null;
+  // 3つ以上の数値（年入り）の場合は末尾2つを月・日とみなす
+  const [m, d] = nums.slice(-2).map(Number);
+  if (m < 1 || m > 12 || d < 1 || d > 31) return null;
+  return { month: m, day: d };
+}
+
+// 今月が誕生月のお客様を日付順に返す
+export function birthdaysInMonth(clients, today = todayStr()) {
+  const month = Number(today.slice(5, 7));
+  return clients
+    .map((client) => ({ client, birthday: parseBirthday(client.birthday) }))
+    .filter((x) => x.birthday && x.birthday.month === month)
+    .sort((a, b) => a.birthday.day - b.birthday.day)
+    .map((x) => ({ client: x.client, month: x.birthday.month, day: x.birthday.day }));
+}
+
+// ---- 売上 ----
+
+// 今月の売上（料金が記録された施術の集計）
+export function revenueStats(visits, today = todayStr()) {
+  const key = monthKey(today);
+  const vs = visits.filter((v) => monthKey(v.date) === key);
+  const priced = vs.filter((v) => (v.price || 0) > 0);
+  const sum = (list) => list.reduce((a, v) => a + (v.price || 0), 0);
+  const total = sum(priced);
+  const nominated = sum(priced.filter((v) => v.nominated));
+  return {
+    month: key,
+    total,
+    nominated,
+    free: total - nominated,
+    recorded: priced.length,
+    average: priced.length ? Math.round(total / priced.length) : 0,
+    nominatedShare: total ? nominated / total : 0,
+  };
+}

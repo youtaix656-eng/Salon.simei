@@ -106,3 +106,45 @@ test('overallAverageInterval: 間隔を計算できるお客様の平均', () =>
   assert.equal(overallAverageInterval(clients, visits), 25);
   assert.equal(overallAverageInterval(clients, []), null);
 });
+
+test('parseBirthday: 様々な表記を解釈する', async () => {
+  const { parseBirthday } = await import('../src/lib/stats.js');
+  assert.deepEqual(parseBirthday('08-02'), { month: 8, day: 2 });
+  assert.deepEqual(parseBirthday('8/2'), { month: 8, day: 2 });
+  assert.deepEqual(parseBirthday('1990-08-02'), { month: 8, day: 2 });
+  assert.deepEqual(parseBirthday('8月2日'), { month: 8, day: 2 });
+  assert.equal(parseBirthday(''), null);
+  assert.equal(parseBirthday('不明'), null);
+  assert.equal(parseBirthday('13-40'), null);
+});
+
+test('birthdaysInMonth: 今月の誕生日を日付順に返す', async () => {
+  const { birthdaysInMonth } = await import('../src/lib/stats.js');
+  const clients = [
+    { id: 'a', name: 'A', birthday: '07-20' },
+    { id: 'b', name: 'B', birthday: '07-05' },
+    { id: 'c', name: 'C', birthday: '08-01' },
+    { id: 'd', name: 'D', birthday: '' },
+  ];
+  const result = birthdaysInMonth(clients, '2026-07-17');
+  assert.deepEqual(result.map((r) => r.client.id), ['b', 'a']);
+  assert.equal(result[0].day, 5);
+});
+
+test('revenueStats: 今月の売上と指名内訳', async () => {
+  const { revenueStats } = await import('../src/lib/stats.js');
+  const visits = [
+    { clientId: 'a', date: '2026-07-01', nominated: true, price: 6000 },
+    { clientId: 'b', date: '2026-07-10', nominated: false, price: 4000 },
+    { clientId: 'a', date: '2026-07-12', nominated: true, price: 0 }, // 料金未入力は集計外
+    { clientId: 'a', date: '2026-06-12', nominated: true, price: 9999 }, // 先月分は含めない
+  ];
+  const r = revenueStats(visits, '2026-07-17');
+  assert.equal(r.total, 10000);
+  assert.equal(r.nominated, 6000);
+  assert.equal(r.free, 4000);
+  assert.equal(r.recorded, 2);
+  assert.equal(r.average, 5000);
+  assert.equal(r.nominatedShare, 0.6);
+  assert.equal(revenueStats([], '2026-07-17').recorded, 0);
+});

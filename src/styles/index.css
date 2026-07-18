@@ -803,3 +803,32 @@ textarea.input {
   gap: 8px;
   overflow-wrap: anywhere;
 }
+
+/* ---- 誕生日・売上・AIプラン ---- */
+.birthday-card {
+  background: linear-gradient(150deg, #ffffff, #fdf3f0);
+  border: 1px solid #f5e0d8;
+}
+
+.chip-birthday {
+  background: #fdeae2;
+  color: #b05a1f;
+}
+
+.stat-row-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.stat-row-3 .stat-value {
+  font-size: 0.95rem;
+}
+
+.ai-answer {
+  margin-top: 10px;
+  background: #f1eee7;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 0.86rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}

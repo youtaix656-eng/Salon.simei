@@ -66,6 +66,7 @@ export function normalizeState(raw) {
         date: String(v.date),
         menu: String(v.menu || ''),
         minutes: Number.isFinite(Number(v.minutes)) ? Number(v.minutes) : 0,
+        price: Number.isFinite(Number(v.price)) && Number(v.price) > 0 ? Number(v.price) : 0,
         nominated: Boolean(v.nominated),
         notes: String(v.notes || ''),
         talk: String(v.talk || ''),
