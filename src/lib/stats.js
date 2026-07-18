@@ -134,3 +134,32 @@ export function revenueStats(visits, today = todayStr()) {
     nominatedShare: total ? nominated / total : 0,
   };
 }
+
+// ---- メニュー別分析 ----
+
+// メニューごとの施術回数・指名率・平均単価（回数の多い順）
+export function menuStats(visits, topN = 8) {
+  const map = new Map();
+  for (const v of visits) {
+    const menu = (v.menu || '').trim();
+    if (!menu) continue;
+    const m = map.get(menu) || { menu, count: 0, nominated: 0, priceSum: 0, priced: 0 };
+    m.count += 1;
+    if (v.nominated) m.nominated += 1;
+    if ((v.price || 0) > 0) {
+      m.priceSum += v.price;
+      m.priced += 1;
+    }
+    map.set(menu, m);
+  }
+  return [...map.values()]
+    .map((m) => ({
+      menu: m.menu,
+      count: m.count,
+      nominated: m.nominated,
+      rate: m.nominated / m.count,
+      averagePrice: m.priced ? Math.round(m.priceSum / m.priced) : 0,
+    }))
+    .sort((a, b) => b.count - a.count || b.rate - a.rate)
+    .slice(0, topN);
+}

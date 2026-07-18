@@ -7,6 +7,7 @@ import {
   clientRanking,
   overallAverageInterval,
   revenueStats,
+  menuStats,
 } from '../lib/stats.js';
 
 // 依存ライブラリなしの SVG 棒グラフ（来店数と指名数の重ね棒 + 指名率ラベル）
@@ -69,6 +70,10 @@ export default function Dashboard({ onOpenClient }) {
   const ranking = clientRanking(clients, visits, 5);
   const avgInterval = overallAverageInterval(clients, visits);
   const revenue = revenueStats(visits, today);
+  const menus = menuStats(visits);
+  const bestMenu = menus.length
+    ? [...menus].filter((m) => m.count >= 2).sort((a, b) => b.rate - a.rate)[0]
+    : null;
 
   return (
     <div className="page">
@@ -142,6 +147,36 @@ export default function Dashboard({ onOpenClient }) {
               <span><i className="dot dot-nominated" /> うち指名</span>
               <span className="legend-note">棒の上は指名率</span>
             </div>
+          </>
+        )}
+      </section>
+
+      <section className="card">
+        <div className="card-title">🧘 メニュー別の指名率</div>
+        {menus.length === 0 ? (
+          <p className="empty">施術記録にメニュー名を入力すると、メニュー別の分析が表示されます。</p>
+        ) : (
+          <>
+            <div className="menu-table">
+              {menus.map((m) => (
+                <div key={m.menu} className="menu-row">
+                  <div className="menu-name">{m.menu}</div>
+                  <div className="menu-meta">
+                    {m.count}回 ・ 指名率 {Math.round(m.rate * 100)}%
+                    {m.averagePrice > 0 && ` ・ 平均¥${m.averagePrice.toLocaleString()}`}
+                  </div>
+                  <div className="menu-bar-track">
+                    <div className="menu-bar" style={{ width: `${Math.round(m.rate * 100)}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+            {bestMenu && bestMenu.rate > 0 && (
+              <p className="hint">
+                指名率が高いのは「{bestMenu.menu}」（{Math.round(bestMenu.rate * 100)}%）。
+                提案トークやコース変更のおすすめに活用しましょう。
+              </p>
+            )}
           </>
         )}
       </section>

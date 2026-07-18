@@ -17,6 +17,7 @@ export function defaultSettings() {
     monthlyGoal: 20,
     templates: DEFAULT_TEMPLATES.map((t) => ({ ...t })),
     ai: { provider: 'gemini', apiKey: '', model: '' },
+    notifications: { enabled: false },
   };
 }
 
@@ -101,6 +102,9 @@ export function normalizeState(raw) {
         apiKey: String(s.ai.apiKey || ''),
         model: String(s.ai.model || ''),
       };
+    }
+    if (s.notifications && typeof s.notifications === 'object') {
+      state.settings.notifications = { enabled: Boolean(s.notifications.enabled) };
     }
     if (Array.isArray(s.templates) && s.templates.length) {
       state.settings.templates = s.templates

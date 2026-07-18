@@ -124,3 +124,16 @@ test('buildClientConsultPrompt: 施術情報のみを含み個人情報は含め
   assert.ok(!prompt.includes('犬の誕生日'));
   assert.ok(!prompt.includes('別人の施術'));
 });
+
+test('buildReviewReplyPrompt: 口コミと条件を含む', async () => {
+  const { buildReviewReplyPrompt } = await import('../src/lib/ai.js');
+  const prompt = buildReviewReplyPrompt('とても良かったです！', { therapistName: '山田' }, { extra: 'カジュアルに' });
+  assert.ok(prompt.includes('とても良かったです！'));
+  assert.ok(prompt.includes('山田'));
+  assert.ok(prompt.includes('謝罪'));       // 悪い口コミへの条件も常に含む
+  assert.ok(prompt.includes('カジュアルに'));
+  // 要望なしでも壊れない
+  const p2 = buildReviewReplyPrompt('残念でした', {});
+  assert.ok(p2.includes('担当セラピスト'));
+  assert.ok(!p2.includes('追加の要望'));
+});

@@ -1,5 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StoreContext, useStoreProviderValue } from './lib/useStore.js';
+import { loadLock } from './lib/lock.js';
+import { syncReminderSnapshot, checkAndNotify } from './lib/reminders.js';
+import LockScreen from './components/LockScreen.jsx';
 import Home from './components/Home.jsx';
 import Clients from './components/Clients.jsx';
 import ClientDetail from './components/ClientDetail.jsx';
@@ -21,9 +24,28 @@ export default function App() {
   const store = useStoreProviderValue();
   // view: { tab, clientId?, presetClientId? }
   const [view, setView] = useState({ tab: 'home' });
+  const [locked, setLocked] = useState(() => Boolean(loadLock()));
+  const notifiedRef = useRef(false);
+
+  // 通知用スナップショットを常に最新に保つ（Service Worker が参照する）
+  useEffect(() => {
+    syncReminderSnapshot(store.state);
+  }, [store.state]);
+
+  // アプリを開いた時に一度だけリマインダーをチェック
+  useEffect(() => {
+    if (locked || notifiedRef.current) return;
+    if (!store.state.settings.notifications?.enabled) return;
+    notifiedRef.current = true;
+    checkAndNotify(store.state).catch(() => {});
+  }, [locked, store.state]);
 
   const go = (tab, extra = {}) => setView({ tab, ...extra });
   const openClient = (clientId) => setView({ tab: 'clients', clientId });
+
+  if (locked) {
+    return <LockScreen onUnlock={() => setLocked(false)} />;
+  }
 
   let content;
   if (view.tab === 'home') {

@@ -4,16 +4,71 @@ import { makeBackup, parseBackup, newId } from '../lib/storage.js';
 import { DEFAULT_TEMPLATES } from '../lib/messages.js';
 import { PROVIDERS } from '../lib/ai.js';
 import { makeDemoData } from '../data/demoData.js';
+import { enableNotifications } from '../lib/reminders.js';
+import { loadLock, enableLock, disableLock, verifyPin, isValidPin } from '../lib/lock.js';
 
 export default function Settings() {
   const { state, updateSettings, replaceState, clearAll } = useStore();
   const { settings } = state;
   const fileRef = useRef(null);
   const [notice, setNotice] = useState('');
+  const [notifyStatus, setNotifyStatus] = useState('');
+  const [lockEnabled, setLockEnabled] = useState(() => Boolean(loadLock()));
+  const [pin1, setPin1] = useState('');
+  const [pin2, setPin2] = useState('');
 
   const flash = (msg) => {
     setNotice(msg);
     setTimeout(() => setNotice(''), 3000);
+  };
+
+  const turnOnNotifications = async () => {
+    try {
+      const result = await enableNotifications();
+      updateSettings({ notifications: { enabled: true } });
+      setNotifyStatus(
+        result.background
+          ? 'バックグラウンド通知に対応しています（アプリを閉じていても通知されます）'
+          : 'この端末はアプリを開いた時に通知します（バックグラウンド通知はAndroidのインストール済みPWAのみ対応）'
+      );
+      flash('リマインダー通知を有効にしました');
+    } catch (err) {
+      setNotifyStatus(`⚠️ ${err.message}`);
+    }
+  };
+
+  const turnOffNotifications = () => {
+    updateSettings({ notifications: { enabled: false } });
+    setNotifyStatus('');
+    flash('リマインダー通知を無効にしました');
+  };
+
+  const setupLock = async () => {
+    if (!isValidPin(pin1)) {
+      flash('PINは4桁の数字で入力してください');
+      return;
+    }
+    if (pin1 !== pin2) {
+      flash('確認用のPINが一致しません');
+      return;
+    }
+    await enableLock(pin1);
+    setLockEnabled(true);
+    setPin1('');
+    setPin2('');
+    flash('PINロックを設定しました（次回起動時から有効）');
+  };
+
+  const removeLock = async () => {
+    const current = window.prompt('現在のPINを入力してください');
+    if (current == null) return;
+    if (await verifyPin(current)) {
+      disableLock();
+      setLockEnabled(false);
+      flash('PINロックを解除しました');
+    } else {
+      flash('PINが違います');
+    }
   };
 
   const exportBackup = () => {
@@ -114,6 +169,65 @@ export default function Settings() {
             onChange={(e) => updateSettings({ monthlyGoal: Math.max(0, Number(e.target.value) || 0) })}
           />
         </label>
+      </section>
+
+      <section className="card form">
+        <div className="card-title">🔔 リマインダー通知</div>
+        <p className="hint">
+          「そろそろ来店時期」「今日がお誕生日」のお客様を通知でお知らせします。
+          iPhoneはアプリを開いた時のみ、Androidのインストール済みPWAはバックグラウンドでも通知できます。
+        </p>
+        <div className="form-actions">
+          {settings.notifications?.enabled ? (
+            <button className="btn" onClick={turnOffNotifications}>通知を無効にする</button>
+          ) : (
+            <button className="btn primary" onClick={turnOnNotifications}>🔔 通知を有効にする</button>
+          )}
+        </div>
+        {notifyStatus && <p className="hint">{notifyStatus}</p>}
+      </section>
+
+      <section className="card form">
+        <div className="card-title">🔐 アプリロック（4桁PIN）</div>
+        <p className="hint">
+          アプリを開くときにPINコードを要求します。お客様情報の保護のため設定をおすすめします。
+          PINを忘れた場合はデータの初期化が必要になるのでご注意ください。
+        </p>
+        {lockEnabled ? (
+          <div className="form-actions">
+            <button className="btn" onClick={removeLock}>ロックを解除（無効化）</button>
+          </div>
+        ) : (
+          <>
+            <label className="field">
+              <span>新しいPIN（4桁の数字）</span>
+              <input
+                type="password"
+                inputMode="numeric"
+                maxLength="4"
+                className="input"
+                value={pin1}
+                onChange={(e) => setPin1(e.target.value.replace(/\D/g, ''))}
+                placeholder="****"
+              />
+            </label>
+            <label className="field">
+              <span>確認のためもう一度</span>
+              <input
+                type="password"
+                inputMode="numeric"
+                maxLength="4"
+                className="input"
+                value={pin2}
+                onChange={(e) => setPin2(e.target.value.replace(/\D/g, ''))}
+                placeholder="****"
+              />
+            </label>
+            <div className="form-actions">
+              <button className="btn primary" onClick={setupLock}>🔐 ロックを設定</button>
+            </div>
+          </>
+        )}
       </section>
 
       <section className="card form">

@@ -148,3 +148,20 @@ test('revenueStats: 今月の売上と指名内訳', async () => {
   assert.equal(r.nominatedShare, 0.6);
   assert.equal(revenueStats([], '2026-07-17').recorded, 0);
 });
+
+test('menuStats: メニュー別の回数・指名率・平均単価', async () => {
+  const { menuStats } = await import('../src/lib/stats.js');
+  const visits = [
+    { menu: 'ボディ60', nominated: true, price: 6000 },
+    { menu: 'ボディ60', nominated: false, price: 6600 },
+    { menu: 'ヘッド45', nominated: true, price: 0 },
+    { menu: '', nominated: true, price: 5000 }, // メニュー未記入は除外
+  ];
+  const stats = menuStats(visits);
+  assert.equal(stats.length, 2);
+  assert.equal(stats[0].menu, 'ボディ60'); // 回数順
+  assert.equal(stats[0].count, 2);
+  assert.equal(stats[0].rate, 0.5);
+  assert.equal(stats[0].averagePrice, 6300);
+  assert.equal(stats[1].averagePrice, 0); // 料金未入力
+});

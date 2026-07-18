@@ -166,3 +166,26 @@ export function buildClientConsultPrompt(client, visits, options = {}) {
   );
   return lines.join('\n');
 }
+
+// ---- 口コミ返信の例文作成 ----
+// 貼り付けた口コミ（良い/悪い）に対する返信文をAIに作らせるプロンプト。
+export function buildReviewReplyPrompt(reviewText, settings = {}, options = {}) {
+  const signer = settings.therapistName ? `担当セラピストの${settings.therapistName}` : '担当セラピスト';
+  const lines = [
+    'リラクゼーションサロンの口コミサイトに投稿された、次の口コミへの返信文を作ってください。',
+    '',
+    '【口コミ】',
+    reviewText.trim(),
+    '',
+    '【返信文の条件】',
+    '・丁寧な敬語で、テンプレートっぽくならないよう口コミの内容に具体的に触れる',
+    '・良い口コミなら：感謝 → 内容への言及 → 次回の来店が楽しみになる一言',
+    '・悪い口コミなら：言い訳をせずまず謝罪 → 指摘の受け止め → 具体的な改善 → 可能ならまたの機会のお願い',
+    '・お客様の実名やスタッフの個人情報は書かない',
+    `・署名は「${signer}」として自然に締める`,
+    '・200〜300字程度',
+  ];
+  if (options.extra) lines.push(`・追加の要望：${options.extra}`);
+  lines.push('', '返信文のみを出力してください（前置きや解説は不要）。');
+  return lines.join('\n');
+}

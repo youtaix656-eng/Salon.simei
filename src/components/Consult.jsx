@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { useStore } from '../lib/useStore.js';
 import { TIP_CATEGORIES } from '../data/tipSeeds.js';
-import { askAI, PROVIDERS, resolveModel } from '../lib/ai.js';
+import { askAI, PROVIDERS, resolveModel, buildReviewReplyPrompt } from '../lib/ai.js';
 
 const ALL_CATEGORIES = [...TIP_CATEGORIES, 'その他'];
 
@@ -277,20 +277,136 @@ function AiChatView() {
   );
 }
 
+// ---- 口コミ返信の例文作成 ----
+
+function ReviewReplyView() {
+  const { state } = useStore();
+  const { settings } = state;
+  const ai = settings.ai || {};
+  const [review, setReview] = useState('');
+  const [extra, setExtra] = useState('');
+  const [reply, setReply] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [copied, setCopied] = useState(false);
+
+  const generate = async (regenerate = false) => {
+    if (!review.trim() || loading) return;
+    setLoading(true);
+    setError('');
+    setCopied(false);
+    try {
+      const prompt = buildReviewReplyPrompt(review, settings, {
+        extra: [extra.trim(), regenerate ? '前回とは違う表現・構成で書いてください' : '']
+          .filter(Boolean)
+          .join('。'),
+      });
+      const answer = await askAI(ai, [{ role: 'user', text: prompt }], settings);
+      setReply(answer);
+    } catch (err) {
+      setError(err?.message || '通信に失敗しました');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const copyReply = async () => {
+    try {
+      await navigator.clipboard.writeText(reply);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  };
+
+  if (!ai.apiKey) {
+    return (
+      <div className="card">
+        <div className="card-title">口コミ返信の例文作成</div>
+        <p className="empty">
+          良い口コミにも悪い口コミにも、印象の良い返信文をAIが作成します。
+          利用するには「設定」タブでAIのAPIキーを登録してください（Google Gemini は無料枠あり）。
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="card form">
+        <div className="card-title">✍️ 口コミ返信の例文作成</div>
+        <label className="field">
+          <span>口コミを貼り付け（良い口コミ・悪い口コミどちらでもOK）</span>
+          <textarea
+            className="input"
+            rows="5"
+            value={review}
+            onChange={(e) => setReview(e.target.value)}
+            placeholder={'例：とても丁寧な施術で肩が軽くなりました！\n例：受付の対応が残念でした。施術は良かったのですが…'}
+          />
+        </label>
+        <label className="field">
+          <span>返信の要望（任意）</span>
+          <input
+            className="input"
+            value={extra}
+            onChange={(e) => setExtra(e.target.value)}
+            placeholder="例：カジュアルめに／次回クーポンの案内を入れる"
+          />
+        </label>
+        <button
+          className="btn primary block"
+          onClick={() => generate(false)}
+          disabled={loading || !review.trim()}
+        >
+          {loading ? '作成中…' : '返信文を作成'}
+        </button>
+        {error && <div className="chat-error">⚠️ {error}</div>}
+        {reply && (
+          <>
+            <textarea
+              className="input message-preview"
+              rows="8"
+              value={reply}
+              onChange={(e) => setReply(e.target.value)}
+            />
+            <div className="form-actions">
+              <button className="btn" onClick={() => generate(true)} disabled={loading}>
+                🔄 別の案
+              </button>
+              <button className="btn primary" onClick={copyReply}>
+                {copied ? '✓ コピーしました' : '📋 コピーする'}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+      <p className="hint">
+        口コミにお客様の実名が含まれる場合は、貼り付ける前に伏せてください。
+        生成された文章は必ず内容を確認・調整してから投稿しましょう。
+      </p>
+    </>
+  );
+}
+
 export default function Consult() {
-  const [mode, setMode] = useState('tips'); // tips | ai
+  const [mode, setMode] = useState('tips'); // tips | ai | review
 
   return (
     <div className="page">
       <div className="segment">
         <button className={mode === 'tips' ? 'seg active' : 'seg'} onClick={() => setMode('tips')}>
-          💡 対処法ノート
+          💡 対処法
         </button>
         <button className={mode === 'ai' ? 'seg active' : 'seg'} onClick={() => setMode('ai')}>
           🤖 AI相談
         </button>
+        <button className={mode === 'review' ? 'seg active' : 'seg'} onClick={() => setMode('review')}>
+          ⭐ 口コミ返信
+        </button>
       </div>
-      {mode === 'tips' ? <TipsView /> : <AiChatView />}
+      {mode === 'tips' ? <TipsView /> : mode === 'ai' ? <AiChatView /> : <ReviewReplyView />}
     </div>
   );
 }
