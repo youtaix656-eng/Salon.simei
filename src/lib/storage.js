@@ -1,6 +1,7 @@
 // 永続化（localStorage）とバックアップの読み書き。
 // パース・正規化は純関数として切り出してテスト可能にしている。
 import { DEFAULT_TEMPLATES } from './messages.js';
+import { TIP_SEEDS } from '../data/tipSeeds.js';
 
 export const STORAGE_KEY = 'salon-shimei-app-v1';
 export const SCHEMA_VERSION = 1;
@@ -15,11 +16,16 @@ export function defaultSettings() {
     therapistName: '',
     monthlyGoal: 20,
     templates: DEFAULT_TEMPLATES.map((t) => ({ ...t })),
+    ai: { provider: 'gemini', apiKey: '', model: '' },
   };
 }
 
+export function defaultTips() {
+  return TIP_SEEDS.map((t) => ({ ...t }));
+}
+
 export function emptyState() {
-  return { clients: [], visits: [], settings: defaultSettings() };
+  return { clients: [], visits: [], tips: defaultTips(), settings: defaultSettings() };
 }
 
 // 外部から来たデータ（localStorage / バックアップファイル）を安全な形に整える
@@ -67,11 +73,31 @@ export function normalizeState(raw) {
       .sort((a, b) => (a.date < b.date ? -1 : 1));
   }
 
+  // 対処法ノート：フィールド自体が無い（旧バージョンのデータ）場合は初期データを
+  // 入れる。空配列は「全部削除した」状態として尊重する。
+  if (Array.isArray(raw.tips)) {
+    state.tips = raw.tips
+      .filter((t) => t && typeof t === 'object' && t.symptom)
+      .map((t) => ({
+        id: String(t.id || newId()),
+        category: String(t.category || 'その他'),
+        symptom: String(t.symptom),
+        approach: String(t.approach || ''),
+      }));
+  }
+
   if (raw.settings && typeof raw.settings === 'object') {
     const s = raw.settings;
     state.settings.therapistName = String(s.therapistName || '');
     const goal = Number(s.monthlyGoal);
     state.settings.monthlyGoal = Number.isFinite(goal) && goal >= 0 ? goal : 20;
+    if (s.ai && typeof s.ai === 'object') {
+      state.settings.ai = {
+        provider: s.ai.provider === 'claude' ? 'claude' : 'gemini',
+        apiKey: String(s.ai.apiKey || ''),
+        model: String(s.ai.model || ''),
+      };
+    }
     if (Array.isArray(s.templates) && s.templates.length) {
       state.settings.templates = s.templates
         .filter((t) => t && typeof t === 'object' && t.body)
@@ -106,10 +132,18 @@ export function saveState(state) {
   }
 }
 
-// バックアップファイル（JSON文字列）を作る
+// バックアップファイル（JSON文字列）を作る。
+// APIキーは共有・保管されるファイルに含めない（復元後に再設定してもらう）。
 export function makeBackup(state, savedAt = new Date().toISOString()) {
+  const data = {
+    ...state,
+    settings: {
+      ...state.settings,
+      ai: { ...(state.settings?.ai || {}), apiKey: '' },
+    },
+  };
   return JSON.stringify(
-    { app: APP_ID, version: SCHEMA_VERSION, savedAt, data: state },
+    { app: APP_ID, version: SCHEMA_VERSION, savedAt, data },
     null,
     2
   );

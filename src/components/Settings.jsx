@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { useStore } from '../lib/useStore.js';
 import { makeBackup, parseBackup, newId } from '../lib/storage.js';
 import { DEFAULT_TEMPLATES } from '../lib/messages.js';
+import { PROVIDERS } from '../lib/ai.js';
 import { makeDemoData } from '../data/demoData.js';
 
 export default function Settings() {
@@ -50,7 +51,9 @@ export default function Settings() {
       state.clients.length === 0 ||
       window.confirm('デモデータを読み込むと現在のデータは上書きされます。よろしいですか？')
     ) {
-      replaceState(makeDemoData());
+      const demo = makeDemoData();
+      // 設定済みのAI設定（APIキー等）は引き継ぐ
+      replaceState({ ...demo, settings: { ...demo.settings, ai: state.settings.ai } });
       flash('デモデータを読み込みました');
     }
   };
@@ -109,6 +112,49 @@ export default function Settings() {
             min="0"
             value={settings.monthlyGoal}
             onChange={(e) => updateSettings({ monthlyGoal: Math.max(0, Number(e.target.value) || 0) })}
+          />
+        </label>
+      </section>
+
+      <section className="card form">
+        <div className="card-title">AI相談の設定</div>
+        <p className="hint">
+          「相談」タブのAI相談機能で使うAPIキーを設定します。キーはこの端末のブラウザ内にのみ
+          保存され、選択したAIプロバイダ以外には送信されません（バックアップファイルにも含まれません）。
+        </p>
+        <label className="field">
+          <span>AIプロバイダ</span>
+          <select
+            className="input"
+            value={settings.ai?.provider || 'gemini'}
+            onChange={(e) => updateSettings({ ai: { ...settings.ai, provider: e.target.value } })}
+          >
+            {Object.values(PROVIDERS).map((p) => (
+              <option key={p.id} value={p.id}>{p.label}</option>
+            ))}
+          </select>
+        </label>
+        <p className="hint">{(PROVIDERS[settings.ai?.provider] || PROVIDERS.gemini).keyHint}
+          {' '}取得先：{(PROVIDERS[settings.ai?.provider] || PROVIDERS.gemini).keyUrl}
+        </p>
+        <label className="field">
+          <span>APIキー</span>
+          <input
+            type="password"
+            className="input"
+            value={settings.ai?.apiKey || ''}
+            onChange={(e) => updateSettings({ ai: { ...settings.ai, apiKey: e.target.value.trim() } })}
+            placeholder="APIキーを貼り付け"
+            autoComplete="off"
+          />
+        </label>
+        <label className="field">
+          <span>モデル名（空欄なら標準：{(PROVIDERS[settings.ai?.provider] || PROVIDERS.gemini).defaultModel}）</span>
+          <input
+            className="input"
+            value={settings.ai?.model || ''}
+            onChange={(e) => updateSettings({ ai: { ...settings.ai, model: e.target.value.trim() } })}
+            placeholder={(PROVIDERS[settings.ai?.provider] || PROVIDERS.gemini).defaultModel}
           />
         </label>
       </section>

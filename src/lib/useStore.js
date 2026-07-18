@@ -1,6 +1,6 @@
 // アプリ全体の状態管理。localStorage への保存は状態変更のたびに自動で行う。
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { loadState, saveState, newId, emptyState } from './storage.js';
+import { loadState, saveState, newId, emptyState, defaultTips } from './storage.js';
 import { todayStr } from './cycle.js';
 
 const StoreContext = createContext(null);
@@ -69,6 +69,28 @@ export function useStoreProviderValue() {
     const updateSettings = (patch) =>
       setState((s) => ({ ...s, settings: { ...s.settings, ...patch } }));
 
+    const addTip = (data) => {
+      const tip = { id: newId(), category: 'その他', symptom: '', approach: '', ...data };
+      setState((s) => ({ ...s, tips: [tip, ...s.tips] }));
+      return tip;
+    };
+
+    const updateTip = (id, patch) =>
+      setState((s) => ({
+        ...s,
+        tips: s.tips.map((t) => (t.id === id ? { ...t, ...patch } : t)),
+      }));
+
+    const deleteTip = (id) =>
+      setState((s) => ({ ...s, tips: s.tips.filter((t) => t.id !== id) }));
+
+    const restoreTipSeeds = () =>
+      setState((s) => {
+        const existing = new Set(s.tips.map((t) => t.id));
+        const missing = defaultTips().filter((t) => !existing.has(t.id));
+        return { ...s, tips: [...s.tips, ...missing] };
+      });
+
     const replaceState = (next) => setState(next);
     const clearAll = () => setState(emptyState());
 
@@ -80,6 +102,10 @@ export function useStoreProviderValue() {
       addVisit,
       deleteVisit,
       updateSettings,
+      addTip,
+      updateTip,
+      deleteTip,
+      restoreTipSeeds,
       replaceState,
       clearAll,
     };

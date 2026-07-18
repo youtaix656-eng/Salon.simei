@@ -642,3 +642,164 @@ textarea.input {
 .tips-card {
   background: linear-gradient(150deg, #ffffff, var(--green-soft));
 }
+
+/* ---- 相談タブ（対処法ノート / AI相談） ---- */
+.segment {
+  display: flex;
+  background: #eeece6;
+  border-radius: 12px;
+  padding: 4px;
+  gap: 4px;
+}
+
+.seg {
+  flex: 1;
+  border: none;
+  background: none;
+  border-radius: 9px;
+  padding: 9px 4px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.seg.active {
+  background: var(--card);
+  color: var(--green-dark);
+  box-shadow: var(--shadow);
+}
+
+.chip-filter {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.chip-select {
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.72rem;
+  padding: 5px 11px;
+}
+
+.chip-select.active {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+
+.tip-card {
+  padding: 14px 16px;
+}
+
+.tip-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.tip-head .chip-category {
+  margin-right: auto;
+  background: var(--green-soft);
+  color: var(--green-dark);
+}
+
+.tip-symptom {
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 6px;
+}
+
+.tip-approach {
+  font-size: 0.84rem;
+  white-space: pre-wrap;
+  color: var(--text);
+  line-height: 1.7;
+}
+
+/* AIチャット */
+.chat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.quick-questions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.quick-q {
+  text-align: left;
+  border: 1px solid var(--line);
+  background: var(--green-soft);
+  color: var(--green-dark);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.83rem;
+  cursor: pointer;
+}
+
+.chat-log {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bubble {
+  max-width: 88%;
+  padding: 10px 13px;
+  border-radius: 14px;
+  font-size: 0.88rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.bubble.user {
+  align-self: flex-end;
+  background: var(--green);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+
+.bubble.assistant {
+  align-self: flex-start;
+  background: #f1eee7;
+  color: var(--text);
+  border-bottom-left-radius: 4px;
+}
+
+.bubble.loading {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.chat-error {
+  background: #fbeae8;
+  color: var(--danger);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 0.8rem;
+}
+
+.chat-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.setup-steps {
+  margin: 10px 0 0;
+  padding-left: 20px;
+  font-size: 0.83rem;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-wrap: anywhere;
+}
