@@ -1,8 +1,7 @@
 name: Deploy to GitHub Pages
 
 # main ブランチへの push で自動ビルド＆デプロイする。
-# 事前に GitHub リポジトリの Settings → Pages で
-# 「Source: GitHub Actions」を選択しておく必要があります。
+# Pages の有効化（Source: GitHub Actions）は configure-pages ステップが自動で行う。
 
 on:
   push:
@@ -52,6 +51,12 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      # Pages が未有効ならここで自動的に有効化する
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
