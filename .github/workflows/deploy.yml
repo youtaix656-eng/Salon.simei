@@ -1,7 +1,8 @@
 name: Deploy to GitHub Pages
 
-# main ブランチへの push で自動ビルド＆デプロイする。
-# Pages の有効化（Source: GitHub Actions）は configure-pages ステップが自動で行う。
+# main ブランチへの push で自動ビルドし、gh-pages ブランチへ公開する。
+# gh-pages ブランチが存在すると GitHub Pages が自動で有効になるため、
+# リポジトリ設定での手動操作は不要。
 
 on:
   push:
@@ -9,9 +10,7 @@ on:
   workflow_dispatch: {}
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 # 同時デプロイを1本に制限（進行中のものはキャンセルしない）
 concurrency:
@@ -19,7 +18,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
+  build-deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -39,24 +38,8 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Deploy to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          path: dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      # Pages が未有効ならここで自動的に有効化する
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
