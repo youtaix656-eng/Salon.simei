@@ -1,9 +1,6 @@
 import { useStore } from '../lib/useStore.js';
-import { followUpStatus, STATUS_LABELS, todayStr } from '../lib/cycle.js';
+import { todayStr } from '../lib/cycle.js';
 import { monthProgress, birthdaysInMonth } from '../lib/stats.js';
-
-// フォロー優先度：離反リスク → 超過 → そろそろ の順、同状態内では超過率の高い順
-const STATUS_ORDER = { risk: 0, due: 1, soon: 2 };
 
 export default function Home({ onOpenClient, onRecord }) {
   const { state } = useStore();
@@ -11,22 +8,6 @@ export default function Home({ onOpenClient, onRecord }) {
   const today = todayStr();
 
   const progress = monthProgress(visits, settings.monthlyGoal, today);
-
-  const followUps = clients
-    .map((c) => ({
-      client: c,
-      info: followUpStatus(
-        visits.filter((v) => v.clientId === c.id).map((v) => v.date),
-        today
-      ),
-    }))
-    .filter((x) => x.info && x.info.status !== 'recent')
-    .sort(
-      (a, b) =>
-        STATUS_ORDER[a.info.status] - STATUS_ORDER[b.info.status] ||
-        b.info.ratio - a.info.ratio
-    );
-
   const goalPercent = Math.round(progress.goalRatio * 100);
   const birthdays = birthdaysInMonth(clients, today);
   const todayDay = Number(today.slice(8, 10));
@@ -73,55 +54,18 @@ export default function Home({ onOpenClient, onRecord }) {
               </li>
             ))}
           </ul>
-          <p className="hint">
-            タップしてカルテを開き、「お誕生日メッセージ」テンプレートでお祝いを送りましょう。
-          </p>
+          <p className="hint">タップするとお客様のカルテが開きます。</p>
         </section>
       )}
 
-      <section className="card">
-        <div className="card-title">フォローアップ推奨</div>
-        {followUps.length === 0 ? (
+      {clients.length === 0 && (
+        <section className="card">
           <p className="empty">
-            {clients.length === 0
-              ? 'まずは「お客様」タブからお客様を登録し、施術を記録しましょう。'
-              : '今フォローが必要なお客様はいません。施術の記録を続けましょう 🌿'}
+            まずは「お客様」タブからお客様を登録し、施術を記録しましょう。
+            設定画面からデモデータを読み込んで試すこともできます。
           </p>
-        ) : (
-          <ul className="list">
-            {followUps.map(({ client, info }) => (
-              <li key={client.id}>
-                <button className="list-row" onClick={() => onOpenClient(client.id)}>
-                  <div className="list-main">
-                    <div className="list-name">{client.name} 様</div>
-                    <div className="list-sub">
-                      最終来店 {info.lastVisit}（{info.daysSince}日前）・通常
-                      {info.intervalDays}日周期
-                    </div>
-                  </div>
-                  <span className={`chip chip-${info.status}`}>
-                    {STATUS_LABELS[info.status]}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-        {followUps.length > 0 && (
-          <p className="hint">
-            タップするとお客様のカルテが開き、フォローメッセージを作成できます。
-          </p>
-        )}
-      </section>
-
-      <section className="card tips-card">
-        <div className="card-title">指名を増やすヒント</div>
-        <ul className="tips">
-          <li>施術後24時間以内のお礼メッセージは再来店率を大きく上げます。</li>
-          <li>前回の会話や好みをカルテに残し、次回の接客で一言添えましょう。</li>
-          <li>「そろそろ来店時期」のお客様には先回りの声かけが効果的です。</li>
-        </ul>
-      </section>
+        </section>
+      )}
     </div>
   );
 }

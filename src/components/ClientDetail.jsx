@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useStore } from '../lib/useStore.js';
 import { followUpStatus, STATUS_LABELS, todayStr } from '../lib/cycle.js';
-import { renderTemplate, buildMessageVars } from '../lib/messages.js';
 import { askAI, buildClientConsultPrompt } from '../lib/ai.js';
 import { parseTagsInput } from '../lib/search.js';
 
@@ -23,9 +22,6 @@ export default function ClientDetail({ clientId, onBack, onRecord }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(null);
   const [draftTags, setDraftTags] = useState('');
-  const [templateId, setTemplateId] = useState(settings.templates[0]?.id || '');
-  const [message, setMessage] = useState('');
-  const [copied, setCopied] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiAnswer, setAiAnswer] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
@@ -57,25 +53,6 @@ export default function ClientDetail({ clientId, onBack, onRecord }) {
       tags: parseTagsInput(draftTags),
     });
     setEditing(false);
-  };
-
-  const generateMessage = () => {
-    const template = settings.templates.find((t) => t.id === templateId);
-    if (!template) return;
-    const vars = buildMessageVars(client, visits, settings);
-    setMessage(renderTemplate(template.body, vars));
-    setCopied(false);
-  };
-
-  const copyMessage = async () => {
-    try {
-      await navigator.clipboard.writeText(message);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // クリップボードが使えない環境ではテキスト選択で代替してもらう
-      setCopied(false);
-    }
   };
 
   const prepareAiPrompt = () => {
@@ -223,34 +200,6 @@ export default function ClientDetail({ clientId, onBack, onRecord }) {
             <div><dt>NG・注意点</dt><dd>{client.ngTopics || '－'}</dd></div>
             <div><dt>メモ</dt><dd>{client.notes || '－'}</dd></div>
           </dl>
-        )}
-      </section>
-
-      <section className="card">
-        <div className="card-title">フォローメッセージ作成</div>
-        <div className="toolbar">
-          <select className="input grow" value={templateId} onChange={(e) => setTemplateId(e.target.value)}>
-            {settings.templates.map((t) => (
-              <option key={t.id} value={t.id}>{t.name}</option>
-            ))}
-          </select>
-          <button className="btn primary" onClick={generateMessage}>作成</button>
-        </div>
-        {message && (
-          <>
-            <textarea
-              className="input message-preview"
-              rows="8"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-            />
-            <div className="form-actions">
-              <button className="btn primary" onClick={copyMessage}>
-                {copied ? '✓ コピーしました' : '📋 コピーする'}
-              </button>
-            </div>
-            <p className="hint">コピーして LINE やメールに貼り付けて送信してください。</p>
-          </>
         )}
       </section>
 

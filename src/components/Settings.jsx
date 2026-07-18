@@ -1,7 +1,6 @@
 import { useRef, useState } from 'react';
 import { useStore } from '../lib/useStore.js';
-import { makeBackup, parseBackup, newId } from '../lib/storage.js';
-import { DEFAULT_TEMPLATES } from '../lib/messages.js';
+import { makeBackup, parseBackup } from '../lib/storage.js';
 import { PROVIDERS } from '../lib/ai.js';
 import { makeDemoData } from '../data/demoData.js';
 import { enableNotifications } from '../lib/reminders.js';
@@ -117,30 +116,6 @@ export default function Settings() {
     if (window.confirm('すべてのデータを削除します。この操作は取り消せません。よろしいですか？')) {
       clearAll();
       flash('すべてのデータを削除しました');
-    }
-  };
-
-  const updateTemplate = (id, patch) =>
-    updateSettings({
-      templates: settings.templates.map((t) => (t.id === id ? { ...t, ...patch } : t)),
-    });
-
-  const addTemplate = () =>
-    updateSettings({
-      templates: [
-        ...settings.templates,
-        { id: newId(), name: '新しいテンプレート', body: '{name}様\n\n' },
-      ],
-    });
-
-  const removeTemplate = (id) => {
-    if (settings.templates.length <= 1) return;
-    updateSettings({ templates: settings.templates.filter((t) => t.id !== id) });
-  };
-
-  const resetTemplates = () => {
-    if (window.confirm('テンプレートを初期状態に戻しますか？')) {
-      updateSettings({ templates: DEFAULT_TEMPLATES.map((t) => ({ ...t })) });
     }
   };
 
@@ -262,49 +237,6 @@ export default function Settings() {
             autoComplete="off"
           />
         </label>
-        <label className="field">
-          <span>モデル名（空欄なら標準：{(PROVIDERS[settings.ai?.provider] || PROVIDERS.gemini).defaultModel}）</span>
-          <input
-            className="input"
-            value={settings.ai?.model || ''}
-            onChange={(e) => updateSettings({ ai: { ...settings.ai, model: e.target.value.trim() } })}
-            placeholder={(PROVIDERS[settings.ai?.provider] || PROVIDERS.gemini).defaultModel}
-          />
-        </label>
-      </section>
-
-      <section className="card form">
-        <div className="card-title-row">
-          <div className="card-title">メッセージテンプレート</div>
-          <button className="btn small" onClick={resetTemplates}>初期に戻す</button>
-        </div>
-        <p className="hint">
-          {'{name}'}＝お客様名、{'{therapist}'}＝あなたの名前、{'{days}'}＝最終来店からの日数、
-          {'{menu}'}＝前回メニュー が差し込まれます。
-        </p>
-        {settings.templates.map((t) => (
-          <div key={t.id} className="template-editor">
-            <div className="toolbar">
-              <input
-                className="input grow"
-                value={t.name}
-                onChange={(e) => updateTemplate(t.id, { name: e.target.value })}
-              />
-              {settings.templates.length > 1 && (
-                <button className="btn small danger-text" onClick={() => removeTemplate(t.id)}>
-                  削除
-                </button>
-              )}
-            </div>
-            <textarea
-              className="input"
-              rows="5"
-              value={t.body}
-              onChange={(e) => updateTemplate(t.id, { body: e.target.value })}
-            />
-          </div>
-        ))}
-        <button className="btn" onClick={addTemplate}>＋ テンプレートを追加</button>
       </section>
 
       <section className="card form">

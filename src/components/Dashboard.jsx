@@ -204,13 +204,6 @@ export default function Dashboard({ onOpenClient }) {
         )}
       </section>
 
-      <section className="card">
-        <div className="card-title">リピートの内訳</div>
-        <p className="empty">
-          来店経験のあるお客様 {repeat.visited} 名のうち、2回以上来店してくださった方は{' '}
-          {repeat.repeated} 名です。初回のお客様への来店後フォローがリピートへの近道です。
-        </p>
-      </section>
     </div>
   );
 }

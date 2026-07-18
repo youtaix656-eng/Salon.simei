@@ -152,6 +152,11 @@ function TipsView() {
           </div>
         ))
       )}
+      <div className="form-actions" style={{ justifyContent: 'flex-start' }}>
+        <button className="btn small" onClick={restoreTipSeeds}>
+          🌱 初期の対処法集で不足分を追加
+        </button>
+      </div>
       <p className="hint">
         ※リラクゼーションの範囲での工夫です。強い痛みや痺れが続く場合は施術を控え、医療機関の受診をおすすめしてください。
       </p>
