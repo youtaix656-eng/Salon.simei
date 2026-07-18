@@ -3,6 +3,7 @@ import { useStore } from '../lib/useStore.js';
 import { followUpStatus, STATUS_LABELS, todayStr } from '../lib/cycle.js';
 import { renderTemplate, buildMessageVars } from '../lib/messages.js';
 import { askAI, buildClientConsultPrompt } from '../lib/ai.js';
+import { parseTagsInput } from '../lib/search.js';
 
 const PRESSURES = ['よわめ', 'ふつう', 'つよめ'];
 
@@ -21,6 +22,7 @@ export default function ClientDetail({ clientId, onBack, onRecord }) {
 
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(null);
+  const [draftTags, setDraftTags] = useState('');
   const [templateId, setTemplateId] = useState(settings.templates[0]?.id || '');
   const [message, setMessage] = useState('');
   const [copied, setCopied] = useState(false);
@@ -43,12 +45,17 @@ export default function ClientDetail({ clientId, onBack, onRecord }) {
 
   const startEdit = () => {
     setDraft({ ...client });
+    setDraftTags((client.tags || []).join('、'));
     setEditing(true);
   };
   const saveEdit = (e) => {
     e.preventDefault();
     if (!draft.name.trim()) return;
-    updateClient(client.id, { ...draft, name: draft.name.trim() });
+    updateClient(client.id, {
+      ...draft,
+      name: draft.name.trim(),
+      tags: parseTagsInput(draftTags),
+    });
     setEditing(false);
   };
 
@@ -157,6 +164,15 @@ export default function ClientDetail({ clientId, onBack, onRecord }) {
               <input className="input" value={draft.kana} onChange={(e) => setDraft({ ...draft, kana: e.target.value })} />
             </label>
             <label className="field">
+              <span>カテゴリタグ（「、」区切り。例：常連、VIP）</span>
+              <input
+                className="input"
+                value={draftTags}
+                onChange={(e) => setDraftTags(e.target.value)}
+                placeholder="例：常連、VIP"
+              />
+            </label>
+            <label className="field">
               <span>誕生日（例：08-02）</span>
               <input className="input" value={draft.birthday} onChange={(e) => setDraft({ ...draft, birthday: e.target.value })} placeholder="MM-DD" />
             </label>
@@ -190,6 +206,16 @@ export default function ClientDetail({ clientId, onBack, onRecord }) {
           </form>
         ) : (
           <dl className="karte">
+            <div>
+              <dt>カテゴリ</dt>
+              <dd>
+                {(client.tags || []).length
+                  ? client.tags.map((tag) => (
+                      <span key={tag} className="chip chip-tag" style={{ marginRight: 4 }}>{tag}</span>
+                    ))
+                  : '－'}
+              </dd>
+            </div>
             <div><dt>誕生日</dt><dd>{client.birthday || '－'}</dd></div>
             <div><dt>圧の好み</dt><dd>{client.pressure || '－'}</dd></div>
             <div><dt>気になる部位</dt><dd>{client.focusAreas || '－'}</dd></div>

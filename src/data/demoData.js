@@ -13,6 +13,7 @@ export function makeDemoData(today = todayStr()) {
     {
       id: 'demo-c1',
       name: '佐藤 美咲',
+      tags: ['常連', 'VIP'],
       kana: 'さとう みさき',
       birthday: `${thisMonth}-25`,
       pressure: 'つよめ',
@@ -25,6 +26,7 @@ export function makeDemoData(today = todayStr()) {
     {
       id: 'demo-c2',
       name: '田中 由香里',
+      tags: ['常連'],
       kana: 'たなか ゆかり',
       birthday: '11-20',
       pressure: 'ふつう',
@@ -37,6 +39,7 @@ export function makeDemoData(today = todayStr()) {
     {
       id: 'demo-c3',
       name: '鈴木 恵',
+      tags: ['常連'],
       kana: 'すずき めぐみ',
       birthday: '03-15',
       pressure: 'よわめ',
@@ -49,6 +52,7 @@ export function makeDemoData(today = todayStr()) {
     {
       id: 'demo-c4',
       name: '高橋 直子',
+      tags: ['常連'],
       kana: 'たかはし なおこ',
       birthday: '',
       pressure: 'つよめ',
@@ -61,6 +65,7 @@ export function makeDemoData(today = todayStr()) {
     {
       id: 'demo-c5',
       name: '山本 健一',
+      tags: ['スポーツ'],
       kana: 'やまもと けんいち',
       birthday: `${thisMonth}-03`,
       pressure: 'つよめ',
@@ -73,6 +78,7 @@ export function makeDemoData(today = todayStr()) {
     {
       id: 'demo-c6',
       name: '伊藤 さくら',
+      tags: ['新規'],
       kana: 'いとう さくら',
       birthday: '01-09',
       pressure: 'ふつう',
@@ -85,6 +91,7 @@ export function makeDemoData(today = todayStr()) {
     {
       id: 'demo-c7',
       name: '中村 亜矢',
+      tags: ['新規'],
       kana: 'なかむら あや',
       birthday: '',
       pressure: 'ふつう',

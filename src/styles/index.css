@@ -832,3 +832,18 @@ textarea.input {
   line-height: 1.7;
   white-space: pre-wrap;
 }
+
+/* ---- タグ ---- */
+.tag-row {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 3px;
+}
+
+.chip-tag {
+  background: #eef1f7;
+  color: #4a5a7a;
+  font-size: 0.66rem;
+  padding: 2px 8px;
+}

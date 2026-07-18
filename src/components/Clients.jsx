@@ -1,19 +1,22 @@
 import { useMemo, useState } from 'react';
 import { useStore } from '../lib/useStore.js';
 import { followUpStatus, STATUS_LABELS, todayStr } from '../lib/cycle.js';
+import { clientMatchesQuery, clientMatchesFilter, collectTags } from '../lib/search.js';
 
 export default function Clients({ onOpenClient }) {
   const { state, addClient } = useStore();
   const { clients, visits } = state;
   const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState(''); // '' | 'birthday' | 'caution' | 'tag:◯◯'
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState({ name: '', kana: '', notes: '' });
   const today = todayStr();
 
+  const allTags = useMemo(() => collectTags(clients), [clients]);
+
   const rows = useMemo(() => {
-    const q = query.trim();
     return clients
-      .filter((c) => !q || c.name.includes(q) || c.kana.includes(q))
+      .filter((c) => clientMatchesFilter(c, filter, today) && clientMatchesQuery(c, query))
       .map((c) => {
         const own = visits.filter((v) => v.clientId === c.id);
         return {
@@ -28,7 +31,7 @@ export default function Clients({ onOpenClient }) {
         const bl = b.info ? b.info.lastVisit : '';
         return al < bl ? 1 : al > bl ? -1 : 0;
       });
-  }, [clients, visits, query, today]);
+  }, [clients, visits, query, filter, today]);
 
   const submit = (e) => {
     e.preventDefault();
@@ -50,13 +53,43 @@ export default function Clients({ onOpenClient }) {
         <input
           type="search"
           className="input grow"
-          placeholder="お名前・ふりがなで検索"
+          placeholder="名前・メモ・タグ／「7月」「注意」でも検索"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
         <button className="btn primary" onClick={() => setAdding((v) => !v)}>
           ＋ 新規
         </button>
+      </div>
+
+      <div className="chip-filter">
+        <button
+          className={filter === '' ? 'chip chip-select active' : 'chip chip-select'}
+          onClick={() => setFilter('')}
+        >
+          すべて
+        </button>
+        <button
+          className={filter === 'birthday' ? 'chip chip-select active' : 'chip chip-select'}
+          onClick={() => setFilter(filter === 'birthday' ? '' : 'birthday')}
+        >
+          🎂 今月誕生日
+        </button>
+        <button
+          className={filter === 'caution' ? 'chip chip-select active' : 'chip chip-select'}
+          onClick={() => setFilter(filter === 'caution' ? '' : 'caution')}
+        >
+          ⚠️ 注意あり
+        </button>
+        {allTags.map((tag) => (
+          <button
+            key={tag}
+            className={filter === `tag:${tag}` ? 'chip chip-select active' : 'chip chip-select'}
+            onClick={() => setFilter(filter === `tag:${tag}` ? '' : `tag:${tag}`)}
+          >
+            {tag}
+          </button>
+        ))}
       </div>
 
       {adding && (
@@ -119,7 +152,15 @@ export default function Clients({ onOpenClient }) {
                   <div className="list-name">
                     {client.name} 様
                     {client.kana && <span className="kana">（{client.kana}）</span>}
+                    {(client.ngTopics || '').trim() && <span title="注意点あり"> ⚠️</span>}
                   </div>
+                  {(client.tags || []).length > 0 && (
+                    <div className="tag-row">
+                      {client.tags.map((tag) => (
+                        <span key={tag} className="chip chip-tag">{tag}</span>
+                      ))}
+                    </div>
+                  )}
                   <div className="list-sub">
                     {info
                       ? `最終来店 ${info.lastVisit} ・ 来店${visitCount}回 ・ 指名${nominated}回`

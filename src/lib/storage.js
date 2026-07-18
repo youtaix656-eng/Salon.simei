@@ -46,6 +46,9 @@ export function normalizeState(raw) {
         likes: String(c.likes || ''),
         ngTopics: String(c.ngTopics || ''),
         notes: String(c.notes || ''),
+        tags: Array.isArray(c.tags)
+          ? c.tags.map((t) => String(t).trim()).filter(Boolean)
+          : [],
         createdAt: String(c.createdAt || ''),
       }));
   }

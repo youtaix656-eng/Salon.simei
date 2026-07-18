@@ -24,6 +24,7 @@ export function useStoreProviderValue() {
         likes: '',
         ngTopics: '',
         notes: '',
+        tags: [],
         createdAt: todayStr(),
         ...data,
       };
