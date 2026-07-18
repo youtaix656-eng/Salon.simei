@@ -6,9 +6,9 @@ import { askAI, PROVIDERS, resolveModel, buildReviewReplyPrompt } from '../lib/a
 const ALL_CATEGORIES = [...TIP_CATEGORIES, 'その他'];
 
 const QUICK_QUESTIONS = [
-  'うつ伏せでおでこが痛くなるお客様への対処法は？',
-  '初回のお客様に指名につなげる一言は？',
-  '力を使わずに圧を深くするコツは？',
+  '「気持ちよかった」と言われた瞬間、何て返せば指名につながる？',
+  '施術後に次回予約につなげる声かけの流れは？',
+  'SNSで新規のお客様に見つけてもらう発信のコツは？',
   '会話が続かないお客様への接し方は？',
 ];
 
