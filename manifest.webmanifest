@@ -1,0 +1,17 @@
+{
+  "name": "指名アップ手帳 — セラピスト顧客カルテ",
+  "short_name": "指名アップ",
+  "description": "リラクゼーションサロンのセラピスト向け 指名アップ支援アプリ。顧客カルテ・来店サイクル分析・フォローアップメッセージ・指名率ダッシュボード。",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f7f4ef",
+  "theme_color": "#2f6f5e",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
