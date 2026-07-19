@@ -721,6 +721,88 @@ textarea.input {
   line-height: 1.7;
 }
 
+/* トークスクリプト */
+.script-lines {
+  font-size: 0.88rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  background: var(--green-soft);
+  color: var(--green-dark);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+}
+
+.script-point {
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--muted);
+  white-space: pre-wrap;
+}
+
+.script-ai {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.script-ai .ai-answer {
+  margin-top: 0;
+}
+
+/* 施術メニュー管理 */
+.field-row {
+  display: flex;
+  gap: 10px;
+}
+
+.menu-group {
+  margin-top: 10px;
+}
+
+.menu-group-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--green-dark);
+  background: var(--green-soft);
+  border-radius: 8px;
+  padding: 4px 10px;
+  margin-bottom: 6px;
+}
+
+.menu-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 2px;
+  border-bottom: 1px solid var(--line);
+}
+
+.menu-row:last-child {
+  border-bottom: none;
+}
+
+.menu-row-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.menu-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.menu-meta {
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+
 /* AIチャット */
 .chat-card {
   display: flex;

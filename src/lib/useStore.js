@@ -1,6 +1,6 @@
 // アプリ全体の状態管理。localStorage への保存は状態変更のたびに自動で行う。
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { loadState, saveState, newId, emptyState, defaultTips } from './storage.js';
+import { loadState, saveState, newId, emptyState, defaultTips, defaultScripts } from './storage.js';
 import { todayStr } from './cycle.js';
 
 const StoreContext = createContext(null);
@@ -93,6 +93,43 @@ export function useStoreProviderValue() {
         return { ...s, tips: [...s.tips, ...missing] };
       });
 
+    const addScript = (data) => {
+      const script = { id: newId(), scene: 'こんな時', title: '', lines: '', point: '', ...data };
+      setState((s) => ({ ...s, scripts: [script, ...s.scripts] }));
+      return script;
+    };
+
+    const updateScript = (id, patch) =>
+      setState((s) => ({
+        ...s,
+        scripts: s.scripts.map((t) => (t.id === id ? { ...t, ...patch } : t)),
+      }));
+
+    const deleteScript = (id) =>
+      setState((s) => ({ ...s, scripts: s.scripts.filter((t) => t.id !== id) }));
+
+    const restoreScriptSeeds = () =>
+      setState((s) => {
+        const existing = new Set(s.scripts.map((t) => t.id));
+        const missing = defaultScripts().filter((t) => !existing.has(t.id));
+        return { ...s, scripts: [...s.scripts, ...missing] };
+      });
+
+    const addMenu = (data) => {
+      const menu = { id: newId(), category: 'その他', name: '', minutes: 0, price: 0, ...data };
+      setState((s) => ({ ...s, menus: [...s.menus, menu] }));
+      return menu;
+    };
+
+    const updateMenu = (id, patch) =>
+      setState((s) => ({
+        ...s,
+        menus: s.menus.map((m) => (m.id === id ? { ...m, ...patch } : m)),
+      }));
+
+    const deleteMenu = (id) =>
+      setState((s) => ({ ...s, menus: s.menus.filter((m) => m.id !== id) }));
+
     const replaceState = (next) => setState(next);
     const clearAll = () => setState(emptyState());
 
@@ -108,6 +145,13 @@ export function useStoreProviderValue() {
       updateTip,
       deleteTip,
       restoreTipSeeds,
+      addScript,
+      updateScript,
+      deleteScript,
+      restoreScriptSeeds,
+      addMenu,
+      updateMenu,
+      deleteMenu,
       replaceState,
       clearAll,
     };

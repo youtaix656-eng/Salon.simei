@@ -200,3 +200,22 @@ export function buildReviewReplyPrompt(reviewText, settings = {}, options = {}) 
   lines.push('', '返信文のみを出力してください（前置きや解説は不要）。');
   return lines.join('\n');
 }
+
+// ---- トークスクリプトのAI言い換え ----
+export function buildScriptRephrasePrompt(script, instruction, settings = {}) {
+  const name = settings.therapistName ? `セラピストの${settings.therapistName}` : 'セラピスト';
+  return [
+    `リラクゼーションサロンの${name}が接客で使うセリフを言い換えてください。`,
+    '',
+    `【シーン】${script.scene}：${script.title}`,
+    '【元のセリフ】',
+    script.lines,
+    script.point ? `【このセリフの狙い】${script.point}` : '',
+    '',
+    `【言い換えの要望】${instruction || '自分の言葉として自然に話せるように'}`,
+    '',
+    '狙いは保ったまま、話し言葉として自然なセリフを2案、番号付きで出してください。セリフのみを出力（解説不要）。',
+  ]
+    .filter(Boolean)
+    .join('\n');
+}

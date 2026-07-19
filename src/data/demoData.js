@@ -147,9 +147,18 @@ export function makeDemoData(today = todayStr()) {
     visit('demo-c7', 45, 'ボディケア40分', 40, false, '初回。お試し利用。'),
   ];
 
+  const menus = [
+    { id: 'demo-m1', category: 'ボディケア', name: 'ボディケア40分', minutes: 40, price: 4400 },
+    { id: 'demo-m2', category: 'ボディケア', name: 'ボディケア60分', minutes: 60, price: 6600 },
+    { id: 'demo-m3', category: 'ボディケア', name: 'スポーツケア60分', minutes: 60, price: 7150 },
+    { id: 'demo-m4', category: 'アロマ', name: 'アロマトリートメント60分', minutes: 60, price: 7700 },
+    { id: 'demo-m5', category: 'オプション', name: 'ヘッド15分', minutes: 15, price: 1650 },
+  ];
+
   return normalizeState({
     clients,
     visits,
+    menus,
     settings: {
       ...defaultSettings(),
       therapistName: '（あなたの名前）',

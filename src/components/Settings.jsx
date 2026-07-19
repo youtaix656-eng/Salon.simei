@@ -5,6 +5,7 @@ import { PROVIDERS } from '../lib/ai.js';
 import { makeDemoData } from '../data/demoData.js';
 import { enableNotifications } from '../lib/reminders.js';
 import { loadLock, enableLock, disableLock, verifyPin, isValidPin } from '../lib/lock.js';
+import MenuSettings from './MenuSettings.jsx';
 
 export default function Settings() {
   const { state, updateSettings, replaceState, clearAll } = useStore();
@@ -145,6 +146,8 @@ export default function Settings() {
           />
         </label>
       </section>
+
+      <MenuSettings />
 
       <section className="card form">
         <div className="card-title">🔔 リマインダー通知</div>

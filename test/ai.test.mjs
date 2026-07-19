@@ -137,3 +137,19 @@ test('buildReviewReplyPrompt: 口コミと条件を含む', async () => {
   assert.ok(p2.includes('担当セラピスト'));
   assert.ok(!p2.includes('追加の要望'));
 });
+
+test('buildScriptRephrasePrompt: シーン・セリフ・要望を含む', async () => {
+  const { buildScriptRephrasePrompt } = await import('../src/lib/ai.js');
+  const prompt = buildScriptRephrasePrompt(
+    { scene: 'クロージング', title: '次回予約のパス', lines: 'ご予約されますか？', point: 'パスを渡す' },
+    'カジュアルに',
+    { therapistName: '山田' }
+  );
+  assert.ok(prompt.includes('クロージング'));
+  assert.ok(prompt.includes('ご予約されますか？'));
+  assert.ok(prompt.includes('カジュアルに'));
+  assert.ok(prompt.includes('山田'));
+  // 要望が空でも既定の指示が入る
+  const prompt2 = buildScriptRephrasePrompt({ scene: 'お出迎え', title: 't', lines: 'l', point: '' }, '', {});
+  assert.ok(prompt2.includes('自分の言葉として自然に話せるように'));
+});

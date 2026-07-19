@@ -1,7 +1,14 @@
 import { useMemo, useRef, useState } from 'react';
 import { useStore } from '../lib/useStore.js';
 import { TIP_CATEGORIES } from '../data/tipSeeds.js';
-import { askAI, PROVIDERS, resolveModel, buildReviewReplyPrompt } from '../lib/ai.js';
+import { SCRIPT_SCENES } from '../data/scriptSeeds.js';
+import {
+  askAI,
+  PROVIDERS,
+  resolveModel,
+  buildReviewReplyPrompt,
+  buildScriptRephrasePrompt,
+} from '../lib/ai.js';
 
 const ALL_CATEGORIES = [...TIP_CATEGORIES, 'その他'];
 
@@ -395,8 +402,264 @@ function ReviewReplyView() {
   );
 }
 
+// ---- トークスクリプト集 ----
+
+function ScriptCard({ script, onEdit }) {
+  const { state, updateScript, deleteScript } = useStore();
+  const { settings } = state;
+  const [copied, setCopied] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
+  const [instruction, setInstruction] = useState('');
+  const [aiResult, setAiResult] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState('');
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(script.lines);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      setCopied(false);
+    }
+  };
+
+  const rephrase = async () => {
+    if (aiLoading) return;
+    setAiLoading(true);
+    setAiError('');
+    try {
+      const prompt = buildScriptRephrasePrompt(script, instruction, settings);
+      const answer = await askAI(settings.ai, [{ role: 'user', text: prompt }], settings);
+      setAiResult(answer);
+    } catch (err) {
+      setAiError(err?.message || '通信に失敗しました');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  return (
+    <div className="card tip-card">
+      <div className="tip-head">
+        <span className="chip chip-category">{script.scene}</span>
+        <button className="btn small" onClick={copy}>{copied ? '✓' : '📋 コピー'}</button>
+        <button className="btn small" onClick={() => onEdit(script)}>編集</button>
+        <button
+          className="btn small danger-text"
+          onClick={() => {
+            if (window.confirm('このスクリプトを削除しますか？')) deleteScript(script.id);
+          }}
+        >
+          削除
+        </button>
+      </div>
+      <div className="tip-symptom">{script.title}</div>
+      <div className="script-lines">「{script.lines}」</div>
+      {script.point && <div className="script-point">🎯 {script.point}</div>}
+
+      {settings.ai?.apiKey && (
+        <div className="script-ai">
+          {!aiOpen ? (
+            <button className="btn small" onClick={() => setAiOpen(true)}>
+              🤖 自分らしく言い換え
+            </button>
+          ) : (
+            <>
+              <div className="toolbar">
+                <input
+                  className="input grow"
+                  value={instruction}
+                  onChange={(e) => setInstruction(e.target.value)}
+                  placeholder="要望（例：もっとカジュアルに／関西弁で）"
+                />
+                <button className="btn primary small" onClick={rephrase} disabled={aiLoading}>
+                  {aiLoading ? '…' : '生成'}
+                </button>
+              </div>
+              {aiError && <div className="chat-error">⚠️ {aiError}</div>}
+              {aiResult && (
+                <>
+                  <div className="ai-answer">{aiResult}</div>
+                  <div className="form-actions">
+                    <button
+                      className="btn small"
+                      onClick={() => {
+                        updateScript(script.id, { lines: aiResult.trim() });
+                        setAiResult('');
+                        setAiOpen(false);
+                      }}
+                    >
+                      このセリフに置き換える
+                    </button>
+                    <button className="btn small" onClick={() => { setAiResult(''); setAiOpen(false); }}>
+                      閉じる
+                    </button>
+                  </div>
+                </>
+              )}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ScriptsView() {
+  const { state, addScript, updateScript, restoreScriptSeeds } = useStore();
+  const { scripts } = state;
+  const [query, setQuery] = useState('');
+  const [scene, setScene] = useState('');
+  const [editingId, setEditingId] = useState(null); // null | 'new' | id
+  const [draft, setDraft] = useState({ scene: SCRIPT_SCENES[0], title: '', lines: '', point: '' });
+
+  const sceneOrder = (s) => {
+    const i = SCRIPT_SCENES.indexOf(s);
+    return i === -1 ? SCRIPT_SCENES.length : i;
+  };
+
+  const filtered = useMemo(() => {
+    const q = query.trim();
+    return scripts
+      .filter(
+        (s) =>
+          (!scene || s.scene === scene) &&
+          (!q || s.title.includes(q) || s.lines.includes(q) || s.point.includes(q))
+      )
+      .slice()
+      .sort((a, b) => sceneOrder(a.scene) - sceneOrder(b.scene));
+  }, [scripts, query, scene]);
+
+  const startNew = () => {
+    setDraft({ scene: scene || SCRIPT_SCENES[0], title: '', lines: '', point: '' });
+    setEditingId('new');
+  };
+  const startEdit = (script) => {
+    setDraft({ scene: script.scene, title: script.title, lines: script.lines, point: script.point });
+    setEditingId(script.id);
+  };
+  const save = (e) => {
+    e.preventDefault();
+    if (!draft.title.trim() && !draft.lines.trim()) return;
+    const data = {
+      scene: draft.scene,
+      title: draft.title.trim() || '無題',
+      lines: draft.lines.trim(),
+      point: draft.point.trim(),
+    };
+    if (editingId === 'new') addScript(data);
+    else updateScript(editingId, data);
+    setEditingId(null);
+  };
+
+  return (
+    <>
+      <div className="toolbar">
+        <input
+          type="search"
+          className="input grow"
+          placeholder="セリフ・シーンで検索"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+        <button className="btn primary" onClick={startNew}>＋ 追加</button>
+      </div>
+
+      <div className="chip-filter">
+        <button
+          className={scene === '' ? 'chip chip-select active' : 'chip chip-select'}
+          onClick={() => setScene('')}
+        >
+          すべて
+        </button>
+        {SCRIPT_SCENES.map((s) => (
+          <button
+            key={s}
+            className={scene === s ? 'chip chip-select active' : 'chip chip-select'}
+            onClick={() => setScene(scene === s ? '' : s)}
+          >
+            {s}
+          </button>
+        ))}
+      </div>
+
+      {editingId !== null && (
+        <form className="card form" onSubmit={save}>
+          <div className="card-title">{editingId === 'new' ? 'スクリプトを追加' : 'スクリプトを編集'}</div>
+          <label className="field">
+            <span>シーン</span>
+            <select
+              className="input"
+              value={draft.scene}
+              onChange={(e) => setDraft({ ...draft, scene: e.target.value })}
+            >
+              {SCRIPT_SCENES.map((s) => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </label>
+          <label className="field">
+            <span>タイトル</span>
+            <input
+              className="input"
+              value={draft.title}
+              onChange={(e) => setDraft({ ...draft, title: e.target.value })}
+              placeholder="例：次回予約のパス"
+              autoFocus
+            />
+          </label>
+          <label className="field">
+            <span>セリフ</span>
+            <textarea
+              className="input"
+              rows="4"
+              value={draft.lines}
+              onChange={(e) => setDraft({ ...draft, lines: e.target.value })}
+              placeholder="例：次回のご予約、されていかれますか？"
+            />
+          </label>
+          <label className="field">
+            <span>狙い・ポイント（任意）</span>
+            <input
+              className="input"
+              value={draft.point}
+              onChange={(e) => setDraft({ ...draft, point: e.target.value })}
+              placeholder="例：頻度＋理由とセットで伝える"
+            />
+          </label>
+          <div className="form-actions">
+            <button type="button" className="btn" onClick={() => setEditingId(null)}>キャンセル</button>
+            <button type="submit" className="btn primary">保存</button>
+          </div>
+        </form>
+      )}
+
+      {filtered.length === 0 ? (
+        <div className="card">
+          <p className="empty">
+            {scripts.length === 0
+              ? 'スクリプトがまだありません。「＋ 追加」から登録するか、下のボタンで初期データを読み込めます。'
+              : '条件に合うスクリプトが見つかりません。'}
+          </p>
+        </div>
+      ) : (
+        filtered.map((script) => (
+          <ScriptCard key={script.id} script={script} onEdit={startEdit} />
+        ))
+      )}
+      <div className="form-actions" style={{ justifyContent: 'flex-start' }}>
+        <button className="btn small" onClick={restoreScriptSeeds}>
+          🌱 初期のスクリプト集で不足分を追加
+        </button>
+      </div>
+      <p className="hint">
+        「◯◯」の部分はご自身のお店・お客様に合わせて言い換えてください。編集して自分専用のスクリプト帳に育てられます。
+      </p>
+    </>
+  );
+}
+
 export default function Consult() {
-  const [mode, setMode] = useState('tips'); // tips | ai | review
+  const [mode, setMode] = useState('tips'); // tips | ai | review | scripts
 
   return (
     <div className="page">
@@ -407,11 +670,22 @@ export default function Consult() {
         <button className={mode === 'ai' ? 'seg active' : 'seg'} onClick={() => setMode('ai')}>
           🤖 AI相談
         </button>
+        <button className={mode === 'scripts' ? 'seg active' : 'seg'} onClick={() => setMode('scripts')}>
+          🗣 トーク集
+        </button>
         <button className={mode === 'review' ? 'seg active' : 'seg'} onClick={() => setMode('review')}>
           ⭐ 口コミ返信
         </button>
       </div>
-      {mode === 'tips' ? <TipsView /> : mode === 'ai' ? <AiChatView /> : <ReviewReplyView />}
+      {mode === 'tips' ? (
+        <TipsView />
+      ) : mode === 'scripts' ? (
+        <ScriptsView />
+      ) : mode === 'ai' ? (
+        <AiChatView />
+      ) : (
+        <ReviewReplyView />
+      )}
     </div>
   );
 }

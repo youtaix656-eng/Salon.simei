@@ -2,6 +2,7 @@
 // パース・正規化は純関数として切り出してテスト可能にしている。
 import { DEFAULT_TEMPLATES } from './messages.js';
 import { TIP_SEEDS } from '../data/tipSeeds.js';
+import { SCRIPT_SEEDS } from '../data/scriptSeeds.js';
 
 export const STORAGE_KEY = 'salon-shimei-app-v1';
 export const SCHEMA_VERSION = 1;
@@ -25,8 +26,19 @@ export function defaultTips() {
   return TIP_SEEDS.map((t) => ({ ...t }));
 }
 
+export function defaultScripts() {
+  return SCRIPT_SEEDS.map((t) => ({ ...t }));
+}
+
 export function emptyState() {
-  return { clients: [], visits: [], tips: defaultTips(), settings: defaultSettings() };
+  return {
+    clients: [],
+    visits: [],
+    tips: defaultTips(),
+    scripts: defaultScripts(),
+    menus: [],
+    settings: defaultSettings(),
+  };
 }
 
 // 外部から来たデータ（localStorage / バックアップファイル）を安全な形に整える
@@ -88,6 +100,32 @@ export function normalizeState(raw) {
         category: String(t.category || 'その他'),
         symptom: String(t.symptom),
         approach: String(t.approach || ''),
+      }));
+  }
+
+  // トークスクリプト：tips と同様、フィールド自体が無い旧データには初期データを入れる
+  if (Array.isArray(raw.scripts)) {
+    state.scripts = raw.scripts
+      .filter((t) => t && typeof t === 'object' && (t.title || t.lines))
+      .map((t) => ({
+        id: String(t.id || newId()),
+        scene: String(t.scene || 'こんな時'),
+        title: String(t.title || '無題'),
+        lines: String(t.lines || ''),
+        point: String(t.point || ''),
+      }));
+  }
+
+  // 施術メニュー（ユーザー定義）
+  if (Array.isArray(raw.menus)) {
+    state.menus = raw.menus
+      .filter((m) => m && typeof m === 'object' && m.name)
+      .map((m) => ({
+        id: String(m.id || newId()),
+        category: String(m.category || 'その他'),
+        name: String(m.name),
+        minutes: Number.isFinite(Number(m.minutes)) && Number(m.minutes) > 0 ? Number(m.minutes) : 0,
+        price: Number.isFinite(Number(m.price)) && Number(m.price) > 0 ? Number(m.price) : 0,
       }));
   }
 

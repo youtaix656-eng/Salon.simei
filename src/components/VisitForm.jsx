@@ -1,14 +1,16 @@
 import { useMemo, useState } from 'react';
 import { useStore } from '../lib/useStore.js';
 import { todayStr } from '../lib/cycle.js';
+import { groupMenusByCategory, menuLabel } from '../lib/menus.js';
 
 export default function VisitForm({ presetClientId, onSaved }) {
   const { state, addVisit, addClient } = useStore();
-  const { clients, visits } = state;
+  const { clients, visits, menus } = state;
 
   const [clientId, setClientId] = useState(presetClientId || clients[0]?.id || '');
   const [newName, setNewName] = useState('');
   const [date, setDate] = useState(todayStr());
+  const [menuId, setMenuId] = useState(''); // '' | '__free__' | menu.id
   const [menu, setMenu] = useState('');
   const [minutes, setMinutes] = useState(60);
   const [price, setPrice] = useState('');
@@ -17,6 +19,21 @@ export default function VisitForm({ presetClientId, onSaved }) {
   const [talk, setTalk] = useState('');
 
   const isNewClient = clientId === '__new__';
+
+  const menuGroups = useMemo(() => groupMenusByCategory(menus), [menus]);
+  const showFreeInput = menus.length === 0 || menuId === '__free__';
+
+  const selectMenu = (id) => {
+    setMenuId(id);
+    const selected = menus.find((m) => m.id === id);
+    if (selected) {
+      setMenu(selected.name);
+      if (selected.minutes > 0) setMinutes(selected.minutes);
+      if (selected.price > 0) setPrice(selected.price);
+    } else {
+      setMenu('');
+    }
+  };
 
   const menuOptions = useMemo(
     () => [...new Set(visits.map((v) => v.menu).filter(Boolean))],
@@ -92,19 +109,47 @@ export default function VisitForm({ presetClientId, onSaved }) {
           />
         </label>
 
-        <label className="field">
-          <span>メニュー</span>
-          <input
-            className="input"
-            list="menu-options"
-            value={menu}
-            onChange={(e) => setMenu(e.target.value)}
-            placeholder="例：ボディケア60分"
-          />
-          <datalist id="menu-options">
-            {menuOptions.map((m) => <option key={m} value={m} />)}
-          </datalist>
-        </label>
+        {menus.length > 0 && (
+          <label className="field">
+            <span>メニュー（カテゴリ順）</span>
+            <select
+              className="input"
+              value={menuId}
+              onChange={(e) => selectMenu(e.target.value)}
+            >
+              <option value="">選択してください（任意）</option>
+              {menuGroups.map((group) => (
+                <optgroup key={group.category} label={group.category}>
+                  {group.items.map((m) => (
+                    <option key={m.id} value={m.id}>{menuLabel(m)}</option>
+                  ))}
+                </optgroup>
+              ))}
+              <option value="__free__">✏️ その他（直接入力）</option>
+            </select>
+          </label>
+        )}
+
+        {showFreeInput && (
+          <label className="field">
+            <span>{menus.length > 0 ? 'メニューを直接入力' : 'メニュー'}</span>
+            <input
+              className="input"
+              list="menu-options"
+              value={menu}
+              onChange={(e) => setMenu(e.target.value)}
+              placeholder="例：ボディケア60分"
+            />
+            <datalist id="menu-options">
+              {menuOptions.map((m) => <option key={m} value={m} />)}
+            </datalist>
+            {menus.length === 0 && (
+              <span className="hint">
+                「設定」タブの「施術メニュー」に登録すると、ここでカテゴリ順に選択できます。
+              </span>
+            )}
+          </label>
+        )}
 
         <label className="field">
           <span>施術時間（分）</span>
