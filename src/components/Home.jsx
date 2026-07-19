@@ -58,7 +58,8 @@ export default function Home({ onOpenClient, onRecord }) {
             ))}
           </ul>
           <p className="hint">
-            来店周期から自動計算した予測日です。前回の会話メモを見返して「覚えていてくれた」を準備しましょう。
+            タップするとお客様のカルテが開きます。来店周期から自動計算した予測日です。
+            前回の会話メモを見返して「覚えていてくれた」を準備しましょう。
           </p>
         </section>
       )}

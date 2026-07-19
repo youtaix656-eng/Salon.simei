@@ -2,6 +2,7 @@
 // リクエスト組み立てとレスポンス解析は純関数に分離してテスト可能にしている。
 // APIキーはこの端末の localStorage にのみ保存され、選択したAIプロバイダ以外には送信されない。
 import { zoneLabels } from '../data/bodyZones.js';
+import { SCRIPT_SCENES } from '../data/scriptSeeds.js';
 
 export const PROVIDERS = {
   gemini: {
@@ -204,6 +205,56 @@ export function buildReviewReplyPrompt(reviewText, settings = {}, options = {}) 
   if (options.extra) lines.push(`・追加の要望：${options.extra}`);
   lines.push('', '返信文のみを出力してください（前置きや解説は不要）。');
   return lines.join('\n');
+}
+
+// ---- トークスクリプトの取り込み（貼り付けテキスト → スクリプトカード） ----
+
+// 貼り付けられたメモやSNS投稿から、シーン別のスクリプトカードをAIに抽出させるプロンプト
+export function buildScriptImportPrompt(text) {
+  return [
+    'リラクゼーションサロンのセラピストが接客で使う「トークスクリプト」のメモを整理してください。',
+    '以下のテキストから、実際に口に出して使えるセリフを抽出し、JSON配列だけを出力してください',
+    '（前置き・解説・コードブロック記号は一切不要）。',
+    '',
+    '出力形式：[{"scene": "...", "title": "...", "lines": "...", "point": "..."}]',
+    `・scene は次のいずれか：${SCRIPT_SCENES.join('／')}`,
+    '・title は内容がひと目でわかる短い見出し',
+    '・lines はそのまま話せるセリフ（元の言い回しの意図を活かす。店名等の当てはめ部分は◯◯にする）',
+    '・point はそのセリフの狙い・使い方のコツ（元テキストの解説を短く要約。なければ空文字）',
+    '・NG例や解説だけの部分は独立したカードにせず、対応する良いセリフの point に要約して入れる',
+    '・同じ内容の重複は1つにまとめる',
+    '',
+    '【テキスト】',
+    text.trim(),
+  ].join('\n');
+}
+
+// AIの返答からスクリプト配列を取り出して正規化する。読み取れなければ例外。
+export function parseScriptImportResponse(text) {
+  const match = String(text || '').match(/\[[\s\S]*\]/);
+  if (!match) throw new Error('スクリプトを読み取れませんでした。もう一度お試しください。');
+  let arr;
+  try {
+    arr = JSON.parse(match[0]);
+  } catch {
+    throw new Error('スクリプトを読み取れませんでした。もう一度お試しください。');
+  }
+  if (!Array.isArray(arr)) {
+    throw new Error('スクリプトを読み取れませんでした。もう一度お試しください。');
+  }
+  const scripts = arr
+    .filter((s) => s && typeof s === 'object')
+    .map((s) => ({
+      scene: SCRIPT_SCENES.includes(s.scene) ? s.scene : 'こんな時',
+      title: String(s.title || '無題').slice(0, 60),
+      lines: String(s.lines || '').trim(),
+      point: String(s.point || '').trim(),
+    }))
+    .filter((s) => s.lines);
+  if (!scripts.length) {
+    throw new Error('取り込めるセリフが見つかりませんでした。テキストを確認してください。');
+  }
+  return scripts;
 }
 
 // ---- トークスクリプトのAI言い換え ----

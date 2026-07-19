@@ -153,3 +153,36 @@ test('buildScriptRephrasePrompt: シーン・セリフ・要望を含む', async
   const prompt2 = buildScriptRephrasePrompt({ scene: 'お出迎え', title: 't', lines: 'l', point: '' }, '', {});
   assert.ok(prompt2.includes('自分の言葉として自然に話せるように'));
 });
+
+test('buildScriptImportPrompt: シーン一覧と貼り付けテキストを含む', async () => {
+  const { buildScriptImportPrompt } = await import('../src/lib/ai.js');
+  const prompt = buildScriptImportPrompt('予約提案のコツ…');
+  assert.ok(prompt.includes('お出迎え'));
+  assert.ok(prompt.includes('クロージング'));
+  assert.ok(prompt.includes('予約提案のコツ…'));
+  assert.ok(prompt.includes('JSON'));
+});
+
+test('parseScriptImportResponse: コードフェンスや前置きが混ざっても読み取れる', async () => {
+  const { parseScriptImportResponse } = await import('../src/lib/ai.js');
+  const answer = [
+    '整理しました。',
+    '```json',
+    '[{"scene":"クロージング","title":"理由つき提案","lines":"◯週間後がベストです","point":"丸投げしない"},',
+    ' {"scene":"変なシーン","title":"","lines":"セリフのみ"},',
+    ' {"scene":"施術中","title":"空", "lines":""}]',
+    '```',
+  ].join('\n');
+  const scripts = parseScriptImportResponse(answer);
+  assert.equal(scripts.length, 2); // lines が空のものは除外
+  assert.equal(scripts[0].scene, 'クロージング');
+  assert.equal(scripts[1].scene, 'こんな時'); // 不明なシーンはフォールバック
+  assert.equal(scripts[1].title, '無題');
+});
+
+test('parseScriptImportResponse: 読み取れない場合は例外を投げる', async () => {
+  const { parseScriptImportResponse } = await import('../src/lib/ai.js');
+  assert.throws(() => parseScriptImportResponse('すみません、わかりませんでした'), /読み取れません/);
+  assert.throws(() => parseScriptImportResponse('[]'), /見つかりません/);
+  assert.throws(() => parseScriptImportResponse('[破損したJSON]'), /読み取れません/);
+});

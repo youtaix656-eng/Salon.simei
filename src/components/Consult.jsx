@@ -8,6 +8,8 @@ import {
   resolveModel,
   buildReviewReplyPrompt,
   buildScriptRephrasePrompt,
+  buildScriptImportPrompt,
+  parseScriptImportResponse,
 } from '../lib/ai.js';
 
 const ALL_CATEGORIES = [...TIP_CATEGORIES, 'その他'];
@@ -506,11 +508,133 @@ function ScriptCard({ script, onEdit }) {
   );
 }
 
+// 貼り付けたテキストをAIでスクリプトカードに整理して取り込むパネル
+function ScriptImport({ onClose }) {
+  const { state, addScript } = useStore();
+  const { settings } = state;
+  const ai = settings.ai || {};
+  const [text, setText] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [preview, setPreview] = useState(null); // null | scripts[]
+  const [done, setDone] = useState(0);
+
+  const runImport = async () => {
+    if (!text.trim() || loading) return;
+    setLoading(true);
+    setError('');
+    try {
+      const prompt = buildScriptImportPrompt(text);
+      const answer = await askAI(ai, [{ role: 'user', text: prompt }], settings);
+      setPreview(parseScriptImportResponse(answer));
+    } catch (err) {
+      setError(err?.message || '通信に失敗しました');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // AIを使わずに、貼り付けた全文を1件のスクリプトとして登録する
+  const addAsSingle = () => {
+    const body = text.trim();
+    if (!body) return;
+    const firstLine = body.split('\n').map((l) => l.trim()).filter(Boolean)[0] || '無題';
+    addScript({
+      scene: 'こんな時',
+      title: firstLine.slice(0, 24),
+      lines: body,
+      point: '',
+    });
+    setDone(1);
+    setText('');
+    setPreview(null);
+  };
+
+  const addAll = () => {
+    for (const s of [...preview].reverse()) addScript(s);
+    setDone(preview.length);
+    setText('');
+    setPreview(null);
+  };
+
+  return (
+    <div className="card form">
+      <div className="card-title">📥 トークスクリプトを貼り付けて取り込み</div>
+      {done > 0 ? (
+        <>
+          <p className="empty">✅ {done}件のスクリプトを登録しました。接客の流れに合わせてシーン別に並びます。</p>
+          <div className="form-actions">
+            <button className="btn" onClick={() => setDone(0)}>続けて取り込む</button>
+            <button className="btn primary" onClick={onClose}>閉じる</button>
+          </div>
+        </>
+      ) : (
+        <>
+          <p className="hint">
+            SNSや講座でメモしたトーク術を貼り付けると、AIがシーン別のスクリプトカードに整理して
+            登録します。登録したスクリプトはこの端末に保存され、いつでも検索・編集できます。
+          </p>
+          <textarea
+            className="input"
+            rows="8"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder={'ここにトークスクリプトの文章を貼り付け\n（セリフとその解説が入った文章ならOK）'}
+          />
+          {error && <div className="chat-error">⚠️ {error}</div>}
+          {!preview ? (
+            <div className="form-actions">
+              <button className="btn" onClick={onClose}>閉じる</button>
+              <button className="btn" onClick={addAsSingle} disabled={!text.trim() || loading}>
+                そのまま1件で登録
+              </button>
+              {ai.apiKey ? (
+                <button className="btn primary" onClick={runImport} disabled={!text.trim() || loading}>
+                  {loading ? 'AIが整理中…' : '🤖 AIで整理して取り込む'}
+                </button>
+              ) : null}
+            </div>
+          ) : (
+            <>
+              <p className="hint">AIが{preview.length}件に整理しました。内容を確認して登録してください：</p>
+              {preview.map((s, i) => (
+                <div key={i} className="card tip-card">
+                  <div className="tip-head">
+                    <span className="chip chip-category">{s.scene}</span>
+                  </div>
+                  <div className="tip-symptom">{s.title}</div>
+                  <div className="script-lines">「{s.lines}」</div>
+                  {s.point && <div className="script-point">🎯 {s.point}</div>}
+                </div>
+              ))}
+              <div className="form-actions">
+                <button className="btn" onClick={() => setPreview(null)} disabled={loading}>
+                  やり直す
+                </button>
+                <button className="btn primary" onClick={addAll}>
+                  この{preview.length}件を登録する
+                </button>
+              </div>
+            </>
+          )}
+          {!ai.apiKey && (
+            <p className="hint">
+              「設定」タブでAIのAPIキーを登録すると、貼り付けた文章をシーン・セリフ・狙いに
+              自動で分けて取り込めます（未設定でも「そのまま1件で登録」は使えます）。
+            </p>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 function ScriptsView() {
   const { state, addScript, updateScript, restoreScriptSeeds } = useStore();
   const { scripts } = state;
   const [query, setQuery] = useState('');
   const [scene, setScene] = useState('');
+  const [importOpen, setImportOpen] = useState(false);
   const [editingId, setEditingId] = useState(null); // null | 'new' | id
   const [draft, setDraft] = useState({ scene: SCRIPT_SCENES[0], title: '', lines: '', point: '' });
 
@@ -583,6 +707,16 @@ function ScriptsView() {
           </button>
         ))}
       </div>
+
+      {!importOpen ? (
+        <div className="form-actions" style={{ justifyContent: 'flex-start' }}>
+          <button className="btn small" onClick={() => setImportOpen(true)}>
+            📥 トークスクリプトを貼り付けて取り込み
+          </button>
+        </div>
+      ) : (
+        <ScriptImport onClose={() => setImportOpen(false)} />
+      )}
 
       {editingId !== null && (
         <form className="card form" onSubmit={save}>
