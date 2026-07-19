@@ -271,6 +271,8 @@ export default function Settings() {
 
       <p className="hint center">
         指名アップ手帳 — データは端末内（localStorage）にのみ保存され、外部送信されません。
+        <br />
+        <a href="./privacy.html" target="_blank" rel="noreferrer">プライバシーポリシー</a>
       </p>
     </div>
   );
