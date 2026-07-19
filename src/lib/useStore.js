@@ -1,6 +1,14 @@
 // アプリ全体の状態管理。localStorage への保存は状態変更のたびに自動で行う。
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { loadState, saveState, newId, emptyState, defaultTips, defaultScripts } from './storage.js';
+import {
+  loadState,
+  saveState,
+  newId,
+  emptyState,
+  defaultTips,
+  defaultScripts,
+  defaultMenus,
+} from './storage.js';
 import { todayStr } from './cycle.js';
 
 const StoreContext = createContext(null);
@@ -131,6 +139,16 @@ export function useStoreProviderValue() {
     const deleteMenu = (id) =>
       setState((s) => ({ ...s, menus: s.menus.filter((m) => m.id !== id) }));
 
+    const restoreMenuSeeds = () =>
+      setState((s) => {
+        const existing = new Set(s.menus.map((m) => m.id));
+        const names = new Set(s.menus.map((m) => m.name));
+        const missing = defaultMenus().filter(
+          (m) => !existing.has(m.id) && !names.has(m.name)
+        );
+        return { ...s, menus: [...s.menus, ...missing] };
+      });
+
     const replaceState = (next) => setState(next);
     const clearAll = () => setState(emptyState());
 
@@ -153,6 +171,7 @@ export function useStoreProviderValue() {
       addMenu,
       updateMenu,
       deleteMenu,
+      restoreMenuSeeds,
       replaceState,
       clearAll,
     };

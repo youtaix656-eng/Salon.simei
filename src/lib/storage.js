@@ -4,6 +4,7 @@ import { DEFAULT_TEMPLATES } from './messages.js';
 import { TIP_SEEDS } from '../data/tipSeeds.js';
 import { SCRIPT_SEEDS } from '../data/scriptSeeds.js';
 import { ZONE_IDS } from '../data/bodyZones.js';
+import { MENU_SEEDS } from '../data/menuSeeds.js';
 
 export const STORAGE_KEY = 'salon-shimei-app-v1';
 export const SCHEMA_VERSION = 1;
@@ -31,13 +32,17 @@ export function defaultScripts() {
   return SCRIPT_SEEDS.map((t) => ({ ...t }));
 }
 
+export function defaultMenus() {
+  return MENU_SEEDS.map((m) => ({ ...m }));
+}
+
 export function emptyState() {
   return {
     clients: [],
     visits: [],
     tips: defaultTips(),
     scripts: defaultScripts(),
-    menus: [],
+    menus: defaultMenus(),
     settings: defaultSettings(),
   };
 }
@@ -120,7 +125,8 @@ export function normalizeState(raw) {
       }));
   }
 
-  // 施術メニュー（ユーザー定義）
+  // 施術メニュー：フィールド自体が無い旧データには初期メニューを入れる。
+  // 空配列は「全部削除した」状態として尊重する。
   if (Array.isArray(raw.menus)) {
     state.menus = raw.menus
       .filter((m) => m && typeof m === 'object' && m.name)

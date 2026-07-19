@@ -4,7 +4,7 @@ import { useStore } from '../lib/useStore.js';
 import { groupMenusByCategory } from '../lib/menus.js';
 
 export default function MenuSettings() {
-  const { state, addMenu, updateMenu, deleteMenu } = useStore();
+  const { state, addMenu, updateMenu, deleteMenu, restoreMenuSeeds } = useStore();
   const { menus } = state;
   const [editingId, setEditingId] = useState(null); // null | 'new' | menu.id
   const [draft, setDraft] = useState({ category: '', name: '', minutes: '', price: '' });
@@ -111,7 +111,14 @@ export default function MenuSettings() {
       )}
 
       {menus.length === 0 ? (
-        <p className="empty">メニューがまだ登録されていません。</p>
+        <>
+          <p className="empty">メニューがまだ登録されていません。</p>
+          <div className="form-actions" style={{ justifyContent: 'flex-start' }}>
+            <button className="btn" onClick={restoreMenuSeeds}>
+              🌱 もみほぐしメニュー（8件）を読み込む
+            </button>
+          </div>
+        </>
       ) : (
         groups.map((group) => (
           <div key={group.category} className="menu-group">
@@ -144,6 +151,13 @@ export default function MenuSettings() {
             ))}
           </div>
         ))
+      )}
+      {menus.length > 0 && (
+        <div className="form-actions" style={{ justifyContent: 'flex-start' }}>
+          <button className="btn small" onClick={restoreMenuSeeds}>
+            🌱 もみほぐしメニューで不足分を追加
+          </button>
+        </div>
       )}
     </section>
   );
