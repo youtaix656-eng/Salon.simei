@@ -3,6 +3,8 @@ import { useStore } from '../lib/useStore.js';
 import { followUpStatus, STATUS_LABELS, todayStr } from '../lib/cycle.js';
 import { askAI, buildClientConsultPrompt } from '../lib/ai.js';
 import { parseTagsInput } from '../lib/search.js';
+import { zoneLabels } from '../data/bodyZones.js';
+import BodyChart from './BodyChart.jsx';
 
 const PRESSURES = ['よわめ', 'ふつう', 'つよめ'];
 
@@ -161,8 +163,22 @@ export default function ClientDetail({ clientId, onBack, onRecord }) {
               </select>
             </label>
             <label className="field">
-              <span>気になる部位</span>
-              <input className="input" value={draft.focusAreas} onChange={(e) => setDraft({ ...draft, focusAreas: e.target.value })} placeholder="例：肩甲骨まわり・首" />
+              <span>気になる部位（図をタップして選択）</span>
+            </label>
+            <BodyChart
+              selected={draft.bodyParts || []}
+              onToggle={(id) =>
+                setDraft((d) => ({
+                  ...d,
+                  bodyParts: (d.bodyParts || []).includes(id)
+                    ? d.bodyParts.filter((z) => z !== id)
+                    : [...(d.bodyParts || []), id],
+                }))
+              }
+            />
+            <label className="field">
+              <span>気になる部位の補足メモ</span>
+              <input className="input" value={draft.focusAreas} onChange={(e) => setDraft({ ...draft, focusAreas: e.target.value })} placeholder="例：肩甲骨の内側が特に硬い" />
             </label>
             <label className="field">
               <span>好きな話題・趣味</span>
@@ -195,11 +211,21 @@ export default function ClientDetail({ clientId, onBack, onRecord }) {
             </div>
             <div><dt>誕生日</dt><dd>{client.birthday || '－'}</dd></div>
             <div><dt>圧の好み</dt><dd>{client.pressure || '－'}</dd></div>
-            <div><dt>気になる部位</dt><dd>{client.focusAreas || '－'}</dd></div>
+            <div>
+              <dt>気になる部位</dt>
+              <dd>
+                {[zoneLabels(client.bodyParts || []).join('・'), client.focusAreas]
+                  .filter(Boolean)
+                  .join(' ／ ') || '－'}
+              </dd>
+            </div>
             <div><dt>好きな話題</dt><dd>{client.likes || '－'}</dd></div>
             <div><dt>NG・注意点</dt><dd>{client.ngTopics || '－'}</dd></div>
             <div><dt>メモ</dt><dd>{client.notes || '－'}</dd></div>
           </dl>
+        )}
+        {!editing && (client.bodyParts || []).length > 0 && (
+          <BodyChart selected={client.bodyParts} />
         )}
       </section>
 

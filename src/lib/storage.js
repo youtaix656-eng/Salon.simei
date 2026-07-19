@@ -3,6 +3,7 @@
 import { DEFAULT_TEMPLATES } from './messages.js';
 import { TIP_SEEDS } from '../data/tipSeeds.js';
 import { SCRIPT_SEEDS } from '../data/scriptSeeds.js';
+import { ZONE_IDS } from '../data/bodyZones.js';
 
 export const STORAGE_KEY = 'salon-shimei-app-v1';
 export const SCHEMA_VERSION = 1;
@@ -56,6 +57,9 @@ export function normalizeState(raw) {
         birthday: String(c.birthday || ''),
         pressure: String(c.pressure || ''),
         focusAreas: String(c.focusAreas || ''),
+        bodyParts: Array.isArray(c.bodyParts)
+          ? c.bodyParts.map((z) => String(z)).filter((z) => ZONE_IDS.has(z))
+          : [],
         likes: String(c.likes || ''),
         ngTopics: String(c.ngTopics || ''),
         notes: String(c.notes || ''),

@@ -21,6 +21,7 @@ export function useStoreProviderValue() {
         birthday: '',
         pressure: '',
         focusAreas: '',
+        bodyParts: [],
         likes: '',
         ngTopics: '',
         notes: '',

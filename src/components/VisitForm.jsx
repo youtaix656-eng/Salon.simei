@@ -20,6 +20,13 @@ export default function VisitForm({ presetClientId, onSaved }) {
 
   const isNewClient = clientId === '__new__';
 
+  // 選択中のお客様の前回来店（visits は日付昇順で保持されている）
+  const lastVisit = useMemo(() => {
+    if (!clientId || isNewClient) return null;
+    const own = visits.filter((v) => v.clientId === clientId);
+    return own.length ? own[own.length - 1] : null;
+  }, [visits, clientId, isNewClient]);
+
   const menuGroups = useMemo(() => groupMenusByCategory(menus), [menus]);
   const showFreeInput = menus.length === 0 || menuId === '__free__';
 
@@ -39,6 +46,18 @@ export default function VisitForm({ presetClientId, onSaved }) {
     () => [...new Set(visits.map((v) => v.menu).filter(Boolean))],
     [visits]
   );
+
+  // 前回の来店内容（メニュー・時間・料金・指名）をフォームに写す
+  const copyLastVisit = () => {
+    if (!lastVisit) return;
+    const registered = menus.find((m) => m.name === lastVisit.menu);
+    if (registered) setMenuId(registered.id);
+    else if (menus.length && lastVisit.menu) setMenuId('__free__');
+    setMenu(lastVisit.menu);
+    if (lastVisit.minutes) setMinutes(lastVisit.minutes);
+    if (lastVisit.price > 0) setPrice(lastVisit.price);
+    setNominated(lastVisit.nominated);
+  };
 
   const submit = (e) => {
     e.preventDefault();
@@ -96,6 +115,20 @@ export default function VisitForm({ presetClientId, onSaved }) {
               required
             />
           </label>
+        )}
+
+        {lastVisit && (
+          <div className="last-visit-hint">
+            <span>
+              前回 {lastVisit.date.slice(5).replace('-', '/')}：
+              {lastVisit.menu || 'メニュー未記入'}
+              {lastVisit.minutes ? `（${lastVisit.minutes}分）` : ''}
+              {lastVisit.price > 0 ? ` ¥${lastVisit.price.toLocaleString()}` : ''}
+            </span>
+            <button type="button" className="btn small" onClick={copyLastVisit}>
+              📋 前回と同じ内容にする
+            </button>
+          </div>
         )}
 
         <label className="field">

@@ -5,6 +5,7 @@
 //   「誕生日」     → 誕生日が登録されているお客様
 //   「7月」など    → その月が誕生月のお客様
 import { parseBirthday } from './stats.js';
+import { zoneLabels } from '../data/bodyZones.js';
 
 // 全お客様からタグ一覧を重複なしで集める（出現順）
 export function collectTags(clients) {
@@ -53,6 +54,7 @@ export function clientMatchesQuery(client, rawQuery) {
     client.birthday,
     client.pressure,
     client.focusAreas,
+    ...zoneLabels(client.bodyParts || []),
     client.likes,
     client.ngTopics,
     client.notes,

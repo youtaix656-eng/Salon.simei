@@ -1,6 +1,6 @@
 import { useStore } from '../lib/useStore.js';
 import { todayStr } from '../lib/cycle.js';
-import { monthProgress, birthdaysInMonth } from '../lib/stats.js';
+import { monthProgress, birthdaysInMonth, upcomingExpectedVisits } from '../lib/stats.js';
 
 export default function Home({ onOpenClient, onRecord }) {
   const { state } = useStore();
@@ -11,6 +11,7 @@ export default function Home({ onOpenClient, onRecord }) {
   const goalPercent = Math.round(progress.goalRatio * 100);
   const birthdays = birthdaysInMonth(clients, today);
   const todayDay = Number(today.slice(8, 10));
+  const upcoming = upcomingExpectedVisits(clients, visits, today, 7);
 
   return (
     <div className="page">
@@ -32,6 +33,35 @@ export default function Home({ onOpenClient, onRecord }) {
       <button className="btn primary block" onClick={onRecord}>
         ✍️ 施術を記録する
       </button>
+
+      {upcoming.length > 0 && (
+        <section className="card">
+          <div className="card-title">🗓 そろそろご来店の予定</div>
+          <ul className="list">
+            {upcoming.map(({ client, info, daysUntil, lastVisit }) => (
+              <li key={client.id}>
+                <button className="list-row" onClick={() => onOpenClient(client.id)}>
+                  <div className="list-main">
+                    <div className="list-name">{client.name} 様</div>
+                    <div className="list-sub">
+                      {info.expectedDate.slice(5).replace('-', '/')}ごろ（周期 約{info.intervalDays}日）
+                    </div>
+                    {lastVisit?.talk && (
+                      <div className="list-sub">💬 前回：{lastVisit.talk}</div>
+                    )}
+                  </div>
+                  <span className="chip chip-soon">
+                    {daysUntil === 0 ? '今日' : daysUntil === 1 ? '明日' : `${daysUntil}日後`}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+          <p className="hint">
+            来店周期から自動計算した予測日です。前回の会話メモを見返して「覚えていてくれた」を準備しましょう。
+          </p>
+        </section>
+      )}
 
       {birthdays.length > 0 && (
         <section className="card birthday-card">

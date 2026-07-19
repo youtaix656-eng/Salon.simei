@@ -803,6 +803,68 @@ textarea.input {
   color: var(--muted);
 }
 
+/* 前回来店の引き写し */
+.last-visit-hint {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  background: var(--green-soft);
+  color: var(--green-dark);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 0.78rem;
+}
+
+/* ボディチャート */
+.body-chart {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  margin: 8px 0;
+}
+
+.body-chart-view {
+  flex: 1;
+  max-width: 150px;
+  text-align: center;
+}
+
+.body-chart svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.body-zone {
+  fill: #eae6da;
+  stroke: #cfc9b8;
+  stroke-width: 1;
+  cursor: pointer;
+}
+
+.body-zone.on {
+  fill: var(--green);
+  stroke: var(--green-dark);
+}
+
+.body-chart.readonly .body-zone {
+  cursor: default;
+}
+
+.body-zone-deco {
+  fill: #f3f0e8;
+  stroke: #e3ded0;
+  stroke-width: 1;
+}
+
+.body-chart-caption {
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
 /* AIチャット */
 .chat-card {
   display: flex;

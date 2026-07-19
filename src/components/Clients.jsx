@@ -163,7 +163,7 @@ export default function Clients({ onOpenClient }) {
                   )}
                   <div className="list-sub">
                     {info
-                      ? `最終来店 ${info.lastVisit} ・ 来店${visitCount}回 ・ 指名${nominated}回`
+                      ? `最終来店 ${info.lastVisit} ・ 来店${visitCount}回 ・ 指名${nominated}回 ・ 次回目安 ${info.expectedDate.slice(5).replace('-', '/')}`
                       : '来店記録なし'}
                   </div>
                 </div>

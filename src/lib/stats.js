@@ -1,5 +1,5 @@
 // 指名率・リピート率などの集計ロジック（純関数）
-import { averageIntervalDays, todayStr } from './cycle.js';
+import { averageIntervalDays, todayStr, followUpStatus, daysBetween } from './cycle.js';
 
 export function monthKey(dateStr) {
   return String(dateStr).slice(0, 7); // 'YYYY-MM'
@@ -89,6 +89,24 @@ export function overallAverageInterval(clients, visits) {
   }
   if (!values.length) return null;
   return values.reduce((a, b) => a + b, 0) / values.length;
+}
+
+// ---- 次回来店の予測 ----
+
+// 来店周期から予測した「次回来店予定日」が今日から withinDays 日以内のお客様を、
+// 予定日が近い順に返す。前回来店の記録（会話メモの見返し用）も添える。
+export function upcomingExpectedVisits(clients, visits, today = todayStr(), withinDays = 7) {
+  return clients
+    .map((client) => {
+      const own = visits.filter((v) => v.clientId === client.id);
+      const info = followUpStatus(own.map((v) => v.date), today);
+      if (!info) return null;
+      const daysUntil = daysBetween(today, info.expectedDate);
+      const lastVisit = own.reduce((a, v) => (!a || v.date > a.date ? v : a), null);
+      return { client, info, daysUntil, lastVisit };
+    })
+    .filter((r) => r && r.daysUntil >= 0 && r.daysUntil <= withinDays)
+    .sort((a, b) => a.daysUntil - b.daysUntil);
 }
 
 // ---- 誕生日 ----

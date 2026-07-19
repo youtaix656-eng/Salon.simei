@@ -1,6 +1,7 @@
 // AI相談機能 — ユーザー自身のAPIキーで Gemini / Claude に質問する。
 // リクエスト組み立てとレスポンス解析は純関数に分離してテスト可能にしている。
 // APIキーはこの端末の localStorage にのみ保存され、選択したAIプロバイダ以外には送信されない。
+import { zoneLabels } from '../data/bodyZones.js';
 
 export const PROVIDERS = {
   gemini: {
@@ -154,12 +155,15 @@ export function buildClientConsultPrompt(client, visits, options = {}) {
     .filter((v) => v.clientId === client.id)
     .sort((a, b) => (a.date < b.date ? 1 : -1));
   const recent = own.slice(0, 3);
+  const focus = [zoneLabels(client.bodyParts || []).join('・'), client.focusAreas]
+    .filter(Boolean)
+    .join('／');
   const lines = [
     'あるお客様（匿名）の次回の施術プランを相談させてください。',
     '',
     '【お客様の情報（匿名）】',
     `・圧の好み：${client.pressure || '記録なし'}`,
-    `・気になる部位：${client.focusAreas || '記録なし'}`,
+    `・気になる部位：${focus || '記録なし'}`,
     `・これまでの来店回数：${own.length}回`,
   ];
   if (options.intervalDays) lines.push(`・来店周期：約${options.intervalDays}日`);
