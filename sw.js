@@ -1,10 +1,11 @@
 // Service Worker — オフライン起動とアプリシェルのキャッシュ
 //
-// アセット名はビルド時にハッシュ化されるため、事前リストではなく
-// 「取得したものを順次キャッシュする」stale-while-revalidate 方式を採る。
-// これにより一度オンラインで開けば、以降はオフラインでも起動できる。
+// ・ページ本体（HTML）はネットワーク優先：オンラインなら開いた瞬間に必ず最新版。
+//   オフライン時のみキャッシュにフォールバックする。
+// ・ハッシュ付きアセット（JS/CSS）は内容が変わればファイル名も変わるため、
+//   キャッシュ優先（stale-while-revalidate）で高速に配信する。
 
-const CACHE = 'salon-shimei-cache-v1';
+const CACHE = 'salon-shimei-cache-v2';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
@@ -28,6 +29,31 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
+  // ページ本体（HTML）はネットワーク優先 — オンラインなら常に最新版を表示
+  if (req.mode === 'navigate') {
+    event.respondWith(
+      (async () => {
+        const cache = await caches.open(CACHE);
+        try {
+          const res = await fetch(req);
+          if (res && res.status === 200 && res.type === 'basic') {
+            cache.put(req, res.clone());
+          }
+          return res;
+        } catch {
+          const shell =
+            (await cache.match(req)) ||
+            (await cache.match('./')) ||
+            (await cache.match('index.html'));
+          if (shell) return shell;
+          return new Response('オフラインです', { status: 503, statusText: 'offline' });
+        }
+      })()
+    );
+    return;
+  }
+
+  // アセットはキャッシュ優先（ハッシュ名なので古くならない）＋裏で更新
   event.respondWith(
     (async () => {
       const cache = await caches.open(CACHE);
@@ -41,17 +67,12 @@ self.addEventListener('fetch', (event) => {
         })
         .catch(() => null);
 
-      // キャッシュ優先。無ければネットワーク。両方だめなら index にフォールバック。
       if (cached) {
         network; // バックグラウンドで更新
         return cached;
       }
       const res = await network;
       if (res) return res;
-      if (req.mode === 'navigate') {
-        const shell = (await cache.match('./')) || (await cache.match('index.html'));
-        if (shell) return shell;
-      }
       return new Response('オフラインです', { status: 503, statusText: 'offline' });
     })()
   );
