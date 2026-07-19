@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import { useStore } from '../lib/useStore.js';
 import { TIP_CATEGORIES } from '../data/tipSeeds.js';
 import { SCRIPT_SCENES } from '../data/scriptSeeds.js';
+import { fuzzyIncludes } from '../lib/search.js';
 import {
   askAI,
   PROVIDERS,
@@ -36,7 +37,7 @@ function TipsView() {
     return tips.filter(
       (t) =>
         (!category || t.category === category) &&
-        (!q || t.symptom.includes(q) || t.approach.includes(q))
+        (!q || fuzzyIncludes(`${t.symptom}\n${t.approach}`, q))
     );
   }, [tips, query, category]);
 
@@ -649,7 +650,7 @@ function ScriptsView() {
       .filter(
         (s) =>
           (!scene || s.scene === scene) &&
-          (!q || s.title.includes(q) || s.lines.includes(q) || s.point.includes(q))
+          (!q || fuzzyIncludes(`${s.title}\n${s.lines}\n${s.point}`, q))
       )
       .slice()
       .sort((a, b) => sceneOrder(a.scene) - sceneOrder(b.scene));

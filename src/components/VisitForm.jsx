@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useStore } from '../lib/useStore.js';
 import { todayStr } from '../lib/cycle.js';
 import { groupMenusByCategory, menuLabel } from '../lib/menus.js';
+import BodyChart from './BodyChart.jsx';
 
 export default function VisitForm({ presetClientId, onSaved }) {
   const { state, addVisit, addClient } = useStore();
@@ -10,6 +11,9 @@ export default function VisitForm({ presetClientId, onSaved }) {
   const [clientId, setClientId] = useState(presetClientId || clients[0]?.id || '');
   const [newName, setNewName] = useState('');
   const [date, setDate] = useState(todayStr());
+  const [time, setTime] = useState('');
+  const [bodyParts, setBodyParts] = useState([]);
+  const [chartOpen, setChartOpen] = useState(false);
   const [menuId, setMenuId] = useState(''); // '' | '__free__' | menu.id
   const [menu, setMenu] = useState('');
   const [minutes, setMinutes] = useState(60);
@@ -71,6 +75,8 @@ export default function VisitForm({ presetClientId, onSaved }) {
     addVisit({
       clientId: targetId,
       date,
+      time,
+      bodyParts,
       menu: menu.trim(),
       minutes: Number(minutes) || 0,
       price: Math.max(0, Number(price) || 0),
@@ -131,16 +137,27 @@ export default function VisitForm({ presetClientId, onSaved }) {
           </div>
         )}
 
-        <label className="field">
-          <span>施術日</span>
-          <input
-            type="date"
-            className="input"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            required
-          />
-        </label>
+        <div className="field-row">
+          <label className="field grow">
+            <span>施術日</span>
+            <input
+              type="date"
+              className="input"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              required
+            />
+          </label>
+          <label className="field grow">
+            <span>開始時間（任意）</span>
+            <input
+              type="time"
+              className="input"
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+            />
+          </label>
+        </div>
 
         {menus.length > 0 && (
           <label className="field">
@@ -217,6 +234,26 @@ export default function VisitForm({ presetClientId, onSaved }) {
           />
           <span>指名での来店</span>
         </label>
+
+        {!chartOpen ? (
+          <div className="form-actions" style={{ justifyContent: 'flex-start' }}>
+            <button type="button" className="btn small" onClick={() => setChartOpen(true)}>
+              🧍 施術した部位を図で記録{bodyParts.length > 0 ? `（${bodyParts.length}箇所）` : ''}
+            </button>
+          </div>
+        ) : (
+          <div className="field">
+            <span>施術した部位（図をタップして選択）</span>
+            <BodyChart
+              selected={bodyParts}
+              onToggle={(id) =>
+                setBodyParts((parts) =>
+                  parts.includes(id) ? parts.filter((z) => z !== id) : [...parts, id]
+                )
+              }
+            />
+          </div>
+        )}
 
         <label className="field">
           <span>施術メモ（状態・行った施術）</span>

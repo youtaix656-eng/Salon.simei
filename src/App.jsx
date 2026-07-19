@@ -7,6 +7,7 @@ import Home from './components/Home.jsx';
 import Clients from './components/Clients.jsx';
 import ClientDetail from './components/ClientDetail.jsx';
 import VisitForm from './components/VisitForm.jsx';
+import CalendarView from './components/CalendarView.jsx';
 import Dashboard from './components/Dashboard.jsx';
 import Consult from './components/Consult.jsx';
 import Settings from './components/Settings.jsx';
@@ -15,6 +16,7 @@ const TABS = [
   { id: 'home', label: 'ホーム', icon: '🏠' },
   { id: 'clients', label: 'お客様', icon: '👥' },
   { id: 'record', label: '記録', icon: '✍️' },
+  { id: 'calendar', label: '予定', icon: '📅' },
   { id: 'consult', label: '相談', icon: '💡' },
   { id: 'stats', label: '分析', icon: '📊' },
   { id: 'settings', label: '設定', icon: '⚙️' },
@@ -67,6 +69,8 @@ export default function App() {
         onSaved={(clientId) => openClient(clientId)}
       />
     );
+  } else if (view.tab === 'calendar') {
+    content = <CalendarView onOpenClient={openClient} />;
   } else if (view.tab === 'consult') {
     content = <Consult />;
   } else if (view.tab === 'stats') {

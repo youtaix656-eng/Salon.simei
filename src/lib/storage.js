@@ -89,7 +89,11 @@ export function normalizeState(raw) {
         id: String(v.id || newId()),
         clientId: String(v.clientId),
         date: String(v.date),
+        time: /^([01]\d|2[0-3]):[0-5]\d$/.test(String(v.time || '')) ? String(v.time) : '',
         menu: String(v.menu || ''),
+        bodyParts: Array.isArray(v.bodyParts)
+          ? v.bodyParts.map((z) => String(z)).filter((z) => ZONE_IDS.has(z))
+          : [],
         minutes: Number.isFinite(Number(v.minutes)) ? Number(v.minutes) : 0,
         price: Number.isFinite(Number(v.price)) && Number(v.price) > 0 ? Number(v.price) : 0,
         nominated: Boolean(v.nominated),

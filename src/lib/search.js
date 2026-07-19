@@ -32,6 +32,23 @@ export function parseTagsInput(text) {
 
 const CAUTION_WORDS = new Set(['注意', '⚠️', '⚠', '⚠️注意⚠️', 'NG', 'ng']);
 
+// 表記ゆれを吸収する正規化：
+// 全角英数→半角（NFKC）、大文字→小文字、カタカナ→ひらがな
+// 例：「フクラハギ」「ふくらはぎ」「ﾌｸﾗﾊｷﾞ」をすべて同じ文字列にする
+export function normalizeForSearch(text) {
+  return String(text || '')
+    .normalize('NFKC')
+    .toLowerCase()
+    .replace(/[ァ-ヶ]/g, (ch) =>
+      String.fromCharCode(ch.charCodeAt(0) - 0x60)
+    );
+}
+
+// 正規化つき部分一致（検索窓の共通ロジック）
+export function fuzzyIncludes(haystack, query) {
+  return normalizeForSearch(haystack).includes(normalizeForSearch(query));
+}
+
 export function clientMatchesQuery(client, rawQuery) {
   const q = String(rawQuery || '').trim();
   if (!q) return true;
@@ -62,7 +79,7 @@ export function clientMatchesQuery(client, rawQuery) {
   ]
     .filter(Boolean)
     .join('\n');
-  return haystack.includes(q);
+  return fuzzyIncludes(haystack, q);
 }
 
 // 絞り込みチップ用フィルタ

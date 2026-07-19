@@ -278,7 +278,10 @@ export default function ClientDetail({ clientId, onBack, onRecord }) {
             {own.map((v) => (
               <li key={v.id} className="visit-item">
                 <div className="visit-head">
-                  <span className="visit-date">{v.date}</span>
+                  <span className="visit-date">
+                    {v.date}
+                    {v.time ? ` ${v.time}` : ''}
+                  </span>
                   <span className={v.nominated ? 'chip chip-nominated' : 'chip chip-free'}>
                     {v.nominated ? '指名' : 'フリー'}
                   </span>
@@ -296,6 +299,9 @@ export default function ClientDetail({ clientId, onBack, onRecord }) {
                   {v.minutes ? `（${v.minutes}分）` : ''}
                   {v.price > 0 && ` ・ ¥${v.price.toLocaleString()}`}
                 </div>
+                {(v.bodyParts || []).length > 0 && (
+                  <div className="visit-note">部位：{zoneLabels(v.bodyParts).join('・')}</div>
+                )}
                 {v.notes && <div className="visit-note">施術メモ：{v.notes}</div>}
                 {v.talk && <div className="visit-note">会話メモ：{v.talk}</div>}
               </li>
