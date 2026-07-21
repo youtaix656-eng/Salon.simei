@@ -64,3 +64,12 @@ export function calendarEvents(clients, visits, month, today = todayStr()) {
 
   return byDay;
 }
+
+// 今日の施術記録のうち、開始時間が最も早いもの（開始時間が入っているもののみ対象）
+export function firstVisitToday(clients, visits, today = todayStr()) {
+  const clientById = new Map(clients.map((c) => [c.id, c]));
+  const todays = visits.filter((v) => v.date === today && v.time);
+  if (!todays.length) return null;
+  const earliest = todays.reduce((a, v) => (v.time < a.time ? v : a));
+  return { ...earliest, client: clientById.get(earliest.clientId) };
+}

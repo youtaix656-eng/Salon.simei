@@ -1,6 +1,8 @@
 import { useStore } from '../lib/useStore.js';
-import { todayStr } from '../lib/cycle.js';
+import { todayStr, daysBetween } from '../lib/cycle.js';
 import { monthProgress, birthdaysInMonth, upcomingExpectedVisits } from '../lib/stats.js';
+import { firstVisitToday } from '../lib/calendar.js';
+import { loadLastBackupDate, shouldRemindBackup } from '../lib/backupTracker.js';
 
 export default function Home({ onOpenClient, onRecord }) {
   const { state } = useStore();
@@ -12,9 +14,28 @@ export default function Home({ onOpenClient, onRecord }) {
   const birthdays = birthdaysInMonth(clients, today);
   const todayDay = Number(today.slice(8, 10));
   const upcoming = upcomingExpectedVisits(clients, visits, today, 7);
+  const firstToday = firstVisitToday(clients, visits, today);
+  const lastBackupDate = loadLastBackupDate();
+  const showBackupReminder = clients.length > 0 && shouldRemindBackup(lastBackupDate, today);
 
   return (
     <div className="page">
+      {firstToday && firstToday.client && (
+        <section className="card first-visit-card">
+          <div className="card-title">⏰ 今日最初のご予約</div>
+          <button className="list-row" onClick={() => onOpenClient(firstToday.client.id)}>
+            <div className="list-main">
+              <div className="list-name">
+                <span className="cal-time">{firstToday.time}</span>
+                {firstToday.client.name} 様
+              </div>
+              <div className="list-sub">{firstToday.menu || 'メニュー未記入'}</div>
+            </div>
+          </button>
+          <p className="hint">タップするとお客様のカルテが開きます。</p>
+        </section>
+      )}
+
       <section className="card goal-card">
         <div className="card-title">今月の指名</div>
         <div className="goal-numbers">
@@ -86,6 +107,18 @@ export default function Home({ onOpenClient, onRecord }) {
             ))}
           </ul>
           <p className="hint">タップするとお客様のカルテが開きます。</p>
+        </section>
+      )}
+
+      {showBackupReminder && (
+        <section className="card backup-reminder-card">
+          <div className="card-title">💾 バックアップのおすすめ</div>
+          <p className="hint">
+            {lastBackupDate
+              ? `最終バックアップ：${daysBetween(lastBackupDate, today)}日前です。`
+              : 'まだバックアップを書き出していません。'}
+            機種変更やブラウザの変更に備えて、設定タブから書き出しておきましょう。
+          </p>
         </section>
       )}
 

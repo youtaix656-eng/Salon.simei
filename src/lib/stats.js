@@ -111,15 +111,26 @@ export function upcomingExpectedVisits(clients, visits, today = todayStr(), with
 
 // ---- 誕生日 ----
 
+// 月ごとの最大日数（2月は閏日の誕生日も入力できるよう29日まで許可）
+const MONTH_DAY_MAX = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
 // 'MM-DD' / 'M/D' / 'YYYY-MM-DD' などの表記から {month, day} を取り出す。
-// 解釈できない場合は null。
+// 解釈できない、または実在しない月日（13月・4月31日など）の場合は null。
 export function parseBirthday(str) {
   const nums = String(str || '').match(/\d+/g);
   if (!nums || nums.length < 2) return null;
   // 3つ以上の数値（年入り）の場合は末尾2つを月・日とみなす
   const [m, d] = nums.slice(-2).map(Number);
-  if (m < 1 || m > 12 || d < 1 || d > 31) return null;
+  if (m < 1 || m > 12) return null;
+  if (d < 1 || d > MONTH_DAY_MAX[m - 1]) return null;
   return { month: m, day: d };
+}
+
+// カルテ編集フォームでの誕生日入力チェック。空欄は「未設定」として許可する。
+export function isValidBirthdayInput(str) {
+  const s = String(str || '').trim();
+  if (!s) return true;
+  return parseBirthday(s) !== null;
 }
 
 // 今月が誕生月のお客様を日付順に返す

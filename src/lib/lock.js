@@ -5,6 +5,12 @@
 
 export const LOCK_KEY = 'salon-shimei-lock-v1';
 
+// 連続誤入力によるロックアウト（総当たり対策）。
+// PIN自体とは別キーで保存し、バックアップには含まれない。
+export const ATTEMPTS_KEY = 'salon-shimei-lock-attempts-v1';
+export const MAX_ATTEMPTS = 5;
+export const LOCKOUT_MS = 30 * 1000;
+
 export function isValidPin(pin) {
   return /^\d{4}$/.test(String(pin || ''));
 }
@@ -36,14 +42,57 @@ export async function enableLock(pin) {
   const salt = randomSalt();
   const hash = await hashPin(pin, salt);
   localStorage.setItem(LOCK_KEY, JSON.stringify({ salt, hash }));
+  resetAttempts();
 }
 
 export function disableLock() {
   localStorage.removeItem(LOCK_KEY);
+  resetAttempts();
 }
 
 export async function verifyPin(pin, lock = loadLock()) {
   if (!lock) return true; // ロック未設定
   if (!isValidPin(pin)) return false;
   return (await hashPin(pin, lock.salt)) === lock.hash;
+}
+
+// ---- 連続誤入力によるロックアウト ----
+
+function loadAttempts() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(ATTEMPTS_KEY));
+    if (raw && typeof raw === 'object') {
+      return { count: Number(raw.count) || 0, lockedUntil: Number(raw.lockedUntil) || 0 };
+    }
+  } catch {
+    /* 壊れたデータは未ロック扱い */
+  }
+  return { count: 0, lockedUntil: 0 };
+}
+
+function saveAttempts(attempts) {
+  localStorage.setItem(ATTEMPTS_KEY, JSON.stringify(attempts));
+}
+
+// 現在ロックアウト中かどうかと、残り時間（ミリ秒）
+export function lockoutStatus(now = Date.now()) {
+  const { lockedUntil } = loadAttempts();
+  if (lockedUntil > now) return { locked: true, remainingMs: lockedUntil - now };
+  return { locked: false, remainingMs: 0 };
+}
+
+// 誤入力のたびに呼ぶ。MAX_ATTEMPTS 回連続で誤ると LOCKOUT_MS の間ロックする。
+export function recordFailedAttempt(now = Date.now()) {
+  const { count } = loadAttempts();
+  const next = count + 1;
+  if (next >= MAX_ATTEMPTS) {
+    saveAttempts({ count: 0, lockedUntil: now + LOCKOUT_MS });
+  } else {
+    saveAttempts({ count: next, lockedUntil: 0 });
+  }
+}
+
+// 正しいPINが入力できた時・PINを設定/解除した時に呼ぶ
+export function resetAttempts() {
+  saveAttempts({ count: 0, lockedUntil: 0 });
 }

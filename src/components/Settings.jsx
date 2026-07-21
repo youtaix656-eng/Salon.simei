@@ -4,6 +4,7 @@ import { makeBackup, parseBackup } from '../lib/storage.js';
 import { PROVIDERS } from '../lib/ai.js';
 import { makeDemoData } from '../data/demoData.js';
 import { enableNotifications } from '../lib/reminders.js';
+import { recordBackupDone } from '../lib/backupTracker.js';
 import { loadLock, enableLock, disableLock, verifyPin, isValidPin } from '../lib/lock.js';
 import MenuSettings from './MenuSettings.jsx';
 
@@ -13,6 +14,7 @@ export default function Settings() {
   const fileRef = useRef(null);
   const [notice, setNotice] = useState('');
   const [notifyStatus, setNotifyStatus] = useState('');
+  const [notifyLoading, setNotifyLoading] = useState(false);
   const [lockEnabled, setLockEnabled] = useState(() => Boolean(loadLock()));
   const [pin1, setPin1] = useState('');
   const [pin2, setPin2] = useState('');
@@ -23,6 +25,8 @@ export default function Settings() {
   };
 
   const turnOnNotifications = async () => {
+    setNotifyLoading(true);
+    setNotifyStatus('');
     try {
       const result = await enableNotifications();
       updateSettings({ notifications: { enabled: true } });
@@ -34,6 +38,8 @@ export default function Settings() {
       flash('リマインダー通知を有効にしました');
     } catch (err) {
       setNotifyStatus(`⚠️ ${err.message}`);
+    } finally {
+      setNotifyLoading(false);
     }
   };
 
@@ -79,6 +85,7 @@ export default function Settings() {
     a.download = `salon-shimei-backup-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
+    recordBackupDone();
     flash('バックアップファイルを書き出しました');
   };
 
@@ -159,7 +166,9 @@ export default function Settings() {
           {settings.notifications?.enabled ? (
             <button className="btn" onClick={turnOffNotifications}>通知を無効にする</button>
           ) : (
-            <button className="btn primary" onClick={turnOnNotifications}>🔔 通知を有効にする</button>
+            <button className="btn primary" onClick={turnOnNotifications} disabled={notifyLoading}>
+              {notifyLoading ? '確認中…' : '🔔 通知を有効にする'}
+            </button>
           )}
         </div>
         {notifyStatus && <p className="hint">{notifyStatus}</p>}

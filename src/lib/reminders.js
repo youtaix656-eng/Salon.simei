@@ -14,6 +14,16 @@ import { averageIntervalDays, daysBetween, todayStr, DEFAULT_INTERVAL_DAYS } fro
 
 export const SYNC_TAG = 'reminder-check';
 export const RENOTIFY_DAYS = 7; // 同じお客様のフォロー通知は7日空ける
+export const PERMISSION_TIMEOUT_MS = 8000; // 許可ダイアログが反応しない場合のタイムアウト
+
+// 一部の環境では通知許可ダイアログが表示されず Promise が永久に解決しないことがある。
+// タイムアウトさせてボタンが無反応に見えないようにする。
+function withTimeout(promise, ms, message) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error(message)), ms)),
+  ]);
+}
 
 // ---- 純関数（テスト対象） ----
 
@@ -127,7 +137,11 @@ export async function enableNotifications() {
   if (!('Notification' in window)) {
     throw new Error('この端末・ブラウザは通知に対応していません');
   }
-  const permission = await Notification.requestPermission();
+  const permission = await withTimeout(
+    Notification.requestPermission(),
+    PERMISSION_TIMEOUT_MS,
+    '通知の許可確認がタイムアウトしました。端末の通知設定を確認して、もう一度お試しください。'
+  );
   if (permission !== 'granted') {
     throw new Error('通知が許可されませんでした（端末の設定から許可できます）');
   }

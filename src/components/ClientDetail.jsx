@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useStore } from '../lib/useStore.js';
 import { followUpStatus, STATUS_LABELS, todayStr } from '../lib/cycle.js';
 import { askAI, buildClientConsultPrompt } from '../lib/ai.js';
+import { isValidBirthdayInput } from '../lib/stats.js';
 import { parseTagsInput } from '../lib/search.js';
 import { zoneLabels } from '../data/bodyZones.js';
 import BodyChart from './BodyChart.jsx';
@@ -24,6 +25,7 @@ export default function ClientDetail({ clientId, onBack, onRecord }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(null);
   const [draftTags, setDraftTags] = useState('');
+  const [birthdayError, setBirthdayError] = useState('');
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiAnswer, setAiAnswer] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
@@ -44,11 +46,17 @@ export default function ClientDetail({ clientId, onBack, onRecord }) {
   const startEdit = () => {
     setDraft({ ...client });
     setDraftTags((client.tags || []).join('、'));
+    setBirthdayError('');
     setEditing(true);
   };
   const saveEdit = (e) => {
     e.preventDefault();
     if (!draft.name.trim()) return;
+    if (!isValidBirthdayInput(draft.birthday)) {
+      setBirthdayError('誕生日は実在する月日で入力してください（例：08-02）');
+      return;
+    }
+    setBirthdayError('');
     updateClient(client.id, {
       ...draft,
       name: draft.name.trim(),
@@ -153,7 +161,17 @@ export default function ClientDetail({ clientId, onBack, onRecord }) {
             </label>
             <label className="field">
               <span>誕生日（例：08-02）</span>
-              <input className="input" value={draft.birthday} onChange={(e) => setDraft({ ...draft, birthday: e.target.value })} placeholder="MM-DD" />
+              <input
+                className="input"
+                value={draft.birthday}
+                onChange={(e) => {
+                  setDraft({ ...draft, birthday: e.target.value });
+                  if (birthdayError) setBirthdayError('');
+                }}
+                placeholder="MM-DD"
+                aria-invalid={Boolean(birthdayError)}
+              />
+              {birthdayError && <span className="field-error">⚠️ {birthdayError}</span>}
             </label>
             <label className="field">
               <span>圧の好み</span>

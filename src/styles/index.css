@@ -1057,6 +1057,15 @@ textarea.input {
   font-size: 0.8rem;
 }
 
+.field-error {
+  color: var(--danger);
+  font-size: 0.75rem;
+}
+
+.input[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+
 .chat-input-row {
   display: flex;
   gap: 8px;
@@ -1077,6 +1086,16 @@ textarea.input {
 .birthday-card {
   background: linear-gradient(150deg, #ffffff, #fdf3f0);
   border: 1px solid #f5e0d8;
+}
+
+.first-visit-card {
+  background: linear-gradient(150deg, #ffffff, #eef5f1);
+  border: 1px solid var(--line);
+}
+
+.backup-reminder-card {
+  background: #fdf8ea;
+  border: 1px solid #f0e2b0;
 }
 
 .chip-birthday {
@@ -1178,6 +1197,10 @@ textarea.input {
   display: grid;
   grid-template-columns: repeat(3, 72px);
   gap: 12px;
+}
+
+.pin-pad.locked .pin-key {
+  opacity: 0.35;
 }
 
 .pin-key {
